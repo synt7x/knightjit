@@ -18,4 +18,10 @@
 #define error(config, fmt, ...) \
     fprintf(stderr, "[ERROR] " fmt "\n", ##__VA_ARGS__)
 
+#define panic(fmt, ...) \
+    do { \
+        fprintf(stderr, "[PANIC] " fmt "\n", ##__VA_ARGS__); \
+        exit(EXIT_FAILURE); \
+    } while (0)
+
 #endif

@@ -1,8 +1,14 @@
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "cli.h"
 #include "debug.h"
+
+#include "jit/value.h"
 
 int main(int argc, char* argv[]) {
     cli_config_t config = cli_parse(argc, argv);
