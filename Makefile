@@ -1,7 +1,7 @@
 EXECUTABLE := knight
 
 ARCH := X64
-CFLAGS := -O3 -Wall -Wextra -std=c99
+CFLAGS := -O3 -Wall -Wextra -std=c99 -D_CRT_SECURE_NO_WARNINGS
 CC := clang
 
 GIT := git

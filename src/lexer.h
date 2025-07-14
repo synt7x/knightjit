@@ -2,6 +2,8 @@
 #define LEXER_H
 
 typedef enum {
+    TK_NONE,
+    
     // Literals
     TK_NUMBER,
     TK_STRING,
@@ -73,5 +75,10 @@ typedef struct {
 
 void lexer_init(lexer_t* lexer, const char* input, int size);
 void lexer_load(token_t* token, lexer_t* lexer);
+
+token_t peek(lexer_t* lexer);
+token_t consume(lexer_t* lexer);
+token_t accept(lexer_t* lexer, token_type_t type);
+token_t expect(lexer_t* lexer, token_type_t type);
 
 #endif

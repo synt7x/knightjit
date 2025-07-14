@@ -131,3 +131,35 @@ void lexer_load(token_t* token, lexer_t* lexer) {
         lexer->current++;
     }
 }
+
+token_t peek(lexer_t* lexer) {
+    return lexer->t;
+}
+
+token_t consume(lexer_t* lexer) {
+    lexer_load(&lexer->t, lexer);
+    return lexer->t;
+}
+
+token_t accept(lexer_t* lexer, token_type_t type) {
+    token_t token = consume(lexer);
+    if (token.type == type) {
+        return token;
+    }
+
+    return (token_t) {
+        .type = TK_NONE,
+        .value = NULL,
+        .length = 0,
+        .line = lexer->linenumber
+    };
+}
+
+token_t expect(lexer_t* lexer, token_type_t type) {
+    token_t token = accept(lexer, type);
+    if (token.type == TK_NONE) {
+        panic("Expected token type %d but got %d at line %d", type, token.type, lexer->linenumber);
+    }
+
+    return token;
+}
