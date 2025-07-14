@@ -43,13 +43,13 @@ void lexer_load(token_t* token, lexer_t* lexer) {
         }
 
         lexer->current += token->length;
-    } else if (character == '"') {
+    } else if (character == '"' || character == '\'') {
         token->type = TK_STRING;
         token->value = &lexer->buffer[lexer->current + 1];
         token->length = 0;
 
         lexer->current++;
-        while (lexer->current < lexer->size && lexer->buffer[lexer->current] != '"') {
+        while (lexer->current < lexer->size && lexer->buffer[lexer->current] != character) {
             token->length++;
             lexer->current++;
         }
@@ -77,7 +77,7 @@ void lexer_load(token_t* token, lexer_t* lexer) {
             case 'A': token->type = TK_ASCII; break;
             case 'B': token->type = TK_BLOCK; break;
             case 'C': token->type = TK_CALL; break;
-            case 'D': token->type = TK_CALL; break;
+            case 'D': token->type = TK_DUMP; break;
             case 'F': token->type = TK_FALSE; break;
             case 'G': token->type = TK_GET; break;
             case 'I': token->type = TK_IF; break;
@@ -87,6 +87,7 @@ void lexer_load(token_t* token, lexer_t* lexer) {
             case 'P': token->type = TK_PROMPT; break;
             case 'Q': token->type = TK_QUIT; break;
             case 'R': token->type = TK_RANDOM; break;
+            case 'S': token->type = TK_SET; break;
             case 'T': token->type = TK_TRUE; break;
             case 'W': token->type = TK_WHILE; break;
             default: panic("Unknown function '%c' at line %d", character, lexer->linenumber);
@@ -103,6 +104,30 @@ void lexer_load(token_t* token, lexer_t* lexer) {
 
         lexer->current += token->length;
     } else {
-        panic("Unexpected character '%c' at line %d", character, lexer->linenumber);
+        switch (character) {
+            case '+': token->type = TK_PLUS; break;
+            case '-': token->type = TK_MINUS; break;
+            case '*': token->type = TK_MULTIPLY; break;
+            case '/': token->type = TK_DIVIDE; break;
+            case '%': token->type = TK_MODULO; break;
+            case '^': token->type = TK_POWER; break;
+            case '<': token->type = TK_LESS; break;
+            case '>': token->type = TK_GREATER; break;
+            case '=': token->type = TK_ASSIGN; break;
+            case '&': token->type = TK_AND; break;
+            case '|': token->type = TK_OR; break;
+            case '!': token->type = TK_NOT; break;
+            case '?': token->type = TK_EQUAL; break;
+            case ';': token->type = TK_EXPR; break;
+            case '[': token->type = TK_PRIME; break;
+            case ']': token->type = TK_ULTIMATE; break;
+            case ',': token->type = TK_BOX; break;
+            case '@': token->type = TK_LIST; break;
+            default: panic("Unknown character '%c' at line %d", character, lexer->linenumber);
+        }
+
+        token->length = 1;
+        token->value = &lexer->buffer[lexer->current];
+        lexer->current++;
     }
 }

@@ -1,0 +1,18 @@
+; = stack @
+; = run BLOCK
+		; = __code [ GET stack 0 TRUE
+		; = __memory @
+		; = __rets @
+		; = __memory + __memory * , 0 30000
+		; = __ptr 0
+		; = __i 0 WHILE < __i + - LENGTH __code 1 1;
+			; = __character [ GET __code __i TRUE IF ? __character '>' = __ptr % + __ptr 1 30000 IF ? __character '<' IF ? __ptr 0 = __ptr - 30000 1 = __ptr % - __ptr 1 30000 IF ? __character '+' = __memory SET __memory __ptr 1 , % + [ GET __memory __ptr TRUE 1 256 IF ? __character '-' IF ? [ GET __memory __ptr TRUE 0 = __memory SET __memory __ptr 1 , 255 = __memory SET __memory __ptr 1 , % - [ GET __memory __ptr TRUE 1 256 IF ? __character '.'
+								; = __char [ GET __memory __ptr TRUE IF | ? __char 10 & > __char 31 < __char 127 OUTPUT + ASCII __char "\" NULL IF ? __character ',' = __memory SET __memory __ptr 1 , ASCII [ PROMPT IF ? __character '[' IF ! ? [ GET __memory __ptr TRUE 0 = __rets + , __i __rets
+											; = _0_b 1
+											; WHILE & < __i LENGTH __code ! ? _0_b 0
+												; = __i + __i 1 IF ? [ GET __code __i TRUE '[' = _0_b + _0_b 1 IF ? [ GET __code __i TRUE ']' = _0_b - _0_b 1 NULL IF ! ? _0_b 0
+												; OUTPUT 'Missing ]' QUIT NULL NULL IF ? __character ']' IF > LENGTH __rets 0 IF ! ? [ GET __memory __ptr TRUE 0 = __i [ __rets
+													; = _ [ __rets
+													; = __rets ] __rets _
+												; OUTPUT 'Missing [' QUIT NULL NULL = __i + __i 1
+; = stack , PROMPT CALL run
