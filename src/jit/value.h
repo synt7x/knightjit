@@ -13,6 +13,7 @@ typedef int32_t v_number_t;
 typedef char* v_string_t;
 typedef int32_t v_boolean_t;
 typedef uintptr_t v_block_t;
+typedef uintptr_t v_list_t;
 
 typedef enum {
     TYPE_NUMBER = 0,
@@ -20,6 +21,7 @@ typedef enum {
     TYPE_BOOLEAN = 2,
     TYPE_NULL = 3,
     TYPE_BLOCK = 4,
+    TYPE_LIST = 5,
 
     TYPE_MASK = 7,
     VALUE_MASK = (~TYPE_MASK)
@@ -31,6 +33,7 @@ typedef enum {
 #define V_IS_BOOLEAN(v) (V_TYPE(v) == TYPE_BOOLEAN)
 #define V_IS_NULL(v) (V_TYPE(v) == TYPE_NULL)
 #define V_IS_BLOCK(v) (V_TYPE(v) == TYPE_BLOCK)
+#define V_IS_LIST(v) (V_TYPE(v) == TYPE_LIST)
 
 static inline v_t v_create_string(const char* str) {
     size_t len = strlen(str);
@@ -80,6 +83,12 @@ static inline v_t v_coerce_to_boolean(v_t v) {
     panic("Cannot coerce v to boolean type");
 }
 
+static inline v_t v_coerce_to_list(v_t v) {
+    if (V_IS_LIST(v)) return v;
+
+    panic("Cannot coerce v to list type");
+}
+
 static inline v_t v_coerce(v_t v, v_type_t type) {
     if (V_TYPE(v) == type) return v;
 
@@ -87,6 +96,7 @@ static inline v_t v_coerce(v_t v, v_type_t type) {
         case TYPE_NUMBER: return v_coerce_to_number(v);
         case TYPE_STRING: return v_coerce_to_string(v);
         case TYPE_BOOLEAN: return v_coerce_to_boolean(v);
+        case TYPE_LIST: return v_coerce_to_list(v);
         case TYPE_NULL: panic("Cannot coerce to null type");
         case TYPE_BLOCK: panic("Cannot coerce to block type");
         default: return 0;
