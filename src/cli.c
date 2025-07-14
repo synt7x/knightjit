@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "cli.h"
+#include "debug.h"
 
 void cli_help() {
     printf("Usage: knight [options] <input_file>\n");
@@ -32,7 +33,7 @@ cli_config_t cli_parse(int argc, char* argv[]) {
             if (i + 1 < argc) {
                 config.input = argv[++i];
             } else {
-                fprintf(stderr, "Error: No input string specified.\n");
+                panic("No string specified for -e");
                 exit(1);
             }
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {

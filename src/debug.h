@@ -1,6 +1,8 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#include <stdio.h>
+#include <stdlib.h>
 #include "cli.h"
 
 #define dbg_verbose(config, fmt, ...) \
@@ -21,7 +23,7 @@
 #define panic(fmt, ...) \
     do { \
         fprintf(stderr, "[PANIC] " fmt "\n", ##__VA_ARGS__); \
-        exit(EXIT_FAILURE); \
+        exit(1); \
     } while (0)
 
 #endif
