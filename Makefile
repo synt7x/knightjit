@@ -20,7 +20,7 @@ endif
 
 TARGET := target
 ARTIFACTS := $(TARGET)/artifacts
-LUAJIT := $(TARGET)/LuaJIT
+LUAJIT := $(TARGET)/luajit
 DYNASM := $(LUAJIT)/dynasm
 SRC := src
 JIT := $(SRC)/jit
@@ -35,15 +35,15 @@ OBJECTS := $(patsubst $(SRC)/%.c,$(ARTIFACTS)/%.o,$(SOURCES)) $(patsubst $(ARTIF
 
 all: build
 
-build: deps $(OBJECTS)
-	$(CC) -o $(TARGET)/$(EXECUTABLE) $(OBJECTS) -I$(INCLUDE)
+build: deps rebuild $(OBJECTS)
+	$(CC) -o $(TARGET)/$(EXECUTABLE) $(OBJECTS)
 
 # Rule for object files from normal sources
-$(ARTIFACTS)/%.o: $(SRC)/%.c $(SRC)/%.h
-	$(CC) $(CFLAGS) -c $(SRC)/$*.c -o $@
+$(ARTIFACTS)/%.o: $(SRC)/%.c
+	$(CC) $(CFLAGS) -c $(SRC)/$*.c -o $@ -I$(SRC) -I$(JIT)
 
 # Rule for object files from JIT sources (require generated .c file)
-$(ARTIFACTS)/%.o: $(ARTIFACTS)/%.$(ARCH).c $(SRC)/%.h
+$(ARTIFACTS)/%.o: $(ARTIFACTS)/%.$(ARCH).c
 	$(CC) $(CFLAGS) -c $(ARTIFACTS)/$*.$(ARCH).c -o $@
 
 # Rule to generate JIT source .c files
@@ -54,6 +54,10 @@ deps:
 	$(EXISTS) "$(ARTIFACTS)" $(MKDIR) "$(ARTIFACTS)"
 	$(EXISTS) $(TARGET) $(MKDIR) $(TARGET)
 	$(EXISTS) $(LUAJIT) git clone https://github.com/LuaJIT/LuaJIT.git $(LUAJIT)
+
+rebuild:
+	$(RM) "$(ARTIFACTS)"
+	$(EXISTS) "$(ARTIFACTS)" $(MKDIR) "$(ARTIFACTS)"
 
 clean:
 	$(RM) target
