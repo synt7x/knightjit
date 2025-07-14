@@ -38,15 +38,12 @@ all: build
 build: deps rebuild $(OBJECTS)
 	$(CC) -o $(TARGET)/$(EXECUTABLE) $(OBJECTS)
 
-# Rule for object files from normal sources
 $(ARTIFACTS)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) -c $(SRC)/$*.c -o $@ -I$(SRC) -I$(JIT)
 
-# Rule for object files from JIT sources (require generated .c file)
 $(ARTIFACTS)/%.o: $(ARTIFACTS)/%.$(ARCH).c
 	$(CC) $(CFLAGS) -c $(ARTIFACTS)/$*.$(ARCH).c -o $@
 
-# Rule to generate JIT source .c files
 $(ARTIFACTS)/%.$(ARCH).c: $(JIT)/%.c
 	$(LUA) $(DYNASM)/dynasm.lua -D $(ARCH) -o $@ $<
 
