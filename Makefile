@@ -1,11 +1,23 @@
 EXECUTABLE := knight
 
 ARCH := X64
-CC := clang
 CFLAGS := -O3 -Wall -Wextra -std=c99
+CC := clang
 
 GIT := git
 LUA := luajit
+
+ifeq (, $(shell where $(CC)))
+$(error "C compiler '$(CC)' not found in PATH")
+endif
+
+ifeq (, $(shell where $(GIT)))
+$(error "Git '$(GIT)' not found in PATH")
+endif
+
+ifeq (, $(shell where $(LUA)))
+$(error "Lua '$(LUA)' not found in PATH")
+endif
 
 ifeq ($(OS),Windows_NT)
 	RM := rd /s /q
@@ -16,6 +28,7 @@ else
 	RM := rm -rf
 	EXISTS := test -d
 	MKDIR := || mkdir -p
+	GIT := || $(GIT)
 endif
 
 TARGET := target
@@ -50,7 +63,7 @@ $(ARTIFACTS)/%.$(ARCH).c: $(JIT)/%.c
 deps:
 	$(EXISTS) "$(ARTIFACTS)" $(MKDIR) "$(ARTIFACTS)"
 	$(EXISTS) $(TARGET) $(MKDIR) $(TARGET)
-	$(EXISTS) $(LUAJIT) git clone https://github.com/LuaJIT/LuaJIT.git $(LUAJIT)
+	$(EXISTS) $(LUAJIT) $(GIT) clone https://github.com/LuaJIT/LuaJIT.git $(LUAJIT)
 
 rebuild:
 	$(RM) "$(ARTIFACTS)"

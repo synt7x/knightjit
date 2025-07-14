@@ -14,6 +14,11 @@ void cli_help() {
 }
 
 cli_config_t cli_parse(int argc, char* argv[]) {
+    if (argc < 2 || !argv) {
+        cli_help();
+        exit(0);
+    }
+
     cli_config_t config = {0};
     config.flags = CONFIG_JIT | CONFIG_FILE;
 
