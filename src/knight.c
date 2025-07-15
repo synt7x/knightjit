@@ -6,6 +6,7 @@
 #include "arena.h"
 #include "cli.h"
 #include "debug.h"
+#include "map.h"
 
 #include "lexer.h"
 #include "parser.h"
@@ -50,6 +51,11 @@ int main(int argc, char* argv[]) {
     ast_node_t* tree = parse(&lexer, arena);
     
     info(config, "Parsed AST of size %zu", arena->size);
+    map_t* symbol_table = map_create(8);
+    arena_t* ir_arena = arena_create(512);
+
+    // ir_t* ir = ir_generate(tree, symbol_table, ir_arena);
+    arena_free(arena);
     
     return 0;
 }

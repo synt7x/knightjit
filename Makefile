@@ -8,7 +8,7 @@ CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
 CC := clang
 
 GIT := git
-LUA := luajitb
+LUA := luajit
 
 ifeq (, $(shell where $(CC)))
 $(error "C compiler '$(CC)' not found in PATH")
