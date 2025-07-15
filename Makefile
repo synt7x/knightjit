@@ -1,7 +1,10 @@
 EXECUTABLE := knight
 
 ARCH := X64
-CFLAGS := -O3 -Wall -Wextra -std=c99 -D_CRT_SECURE_NO_WARNINGS
+CFLAGS := -Ofast -march=native -mtune=native -Wall -Wextra -std=c99 -D_CRT_SECURE_NO_WARNINGS
+CFLAGS += -fomit-frame-pointer -finline-functions -fno-stack-protector
+CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
+
 CC := clang
 
 GIT := git
@@ -20,11 +23,13 @@ ifeq ($(OS),Windows_NT)
 	EXISTS := if not exist
 	MKDIR = mkdir
 	EXECUTABLE := $(EXECUTABLE).exe
+	LDFLAGS := -Wl,/SUBSYSTEM:CONSOLE -Wl,/OPT:REF -Wl,/OPT:ICF
 else
 	RM := rm -rf
 	EXISTS := test -d
 	MKDIR := || mkdir -p
 	GIT := || $(GIT)
+	LDFLAGS := -Wl,--gc-sections -s -Wl,--strip-all
 endif
 
 TARGET := target
@@ -51,7 +56,7 @@ all: build
 
 build: deps rebuild $(OBJECTS)
 	@echo ==== Building $(EXECUTABLE) ====
-	$(CC) -o $(TARGET)/$(EXECUTABLE) $(OBJECTS)
+	$(CC) -o $(TARGET)/$(EXECUTABLE) $(OBJECTS) $(LDFLAGS)
 	@echo ==== Built $(TARGET)/$(EXECUTABLE) ====
 
 $(ARTIFACTS)/%.o: $(SRC)/%.c

@@ -49,6 +49,7 @@ int main(int argc, char* argv[]) {
     arena_t* arena = arena_create(512);
     ast_node_t* tree = parse(&lexer, arena);
     
+    info(config, "Parsed AST of size %zu", arena->size);
     
     return 0;
 }

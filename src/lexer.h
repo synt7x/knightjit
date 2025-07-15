@@ -1,7 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-typedef enum {
+typedef enum token_type {
     TK_NONE,
     
     // Literals
@@ -58,14 +58,14 @@ typedef enum {
     TK_EOF
 } token_type_t;
 
-typedef struct {
+typedef struct token {
     token_type_t type;
     const char *value;
     int length;
     int line;
 } token_t;
 
-typedef struct {
+typedef struct lexer {
     const char* buffer;
     int size;
     int current;

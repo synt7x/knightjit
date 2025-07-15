@@ -4,7 +4,7 @@
 #include "arena.h"
 #include "lexer.h"
 
-typedef enum {
+typedef enum ast_kind {
     AST_LITERAL,
     AST_PROMPT,
     AST_RANDOM,
@@ -39,7 +39,7 @@ typedef enum {
     AST_SET,
 } ast_kind_t;
 
-typedef enum {
+typedef enum ast_literal_kind {
     AST_LITERAL_STRING,
     AST_LITERAL_NUMBER,
     AST_LITERAL_BOOLEAN,
