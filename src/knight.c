@@ -3,10 +3,12 @@
 #include <string.h>
 
 #include "file.h"
+#include "arena.h"
 #include "cli.h"
 #include "debug.h"
 
 #include "lexer.h"
+#include "parser.h"
 
 #include "jit/value.h"
 
@@ -44,15 +46,9 @@ int main(int argc, char* argv[]) {
         panic("No input provided. Use -h for help.");
     }
 
-    // lexer testing ^-^
-    // do {
-    //     lexer_load(&lexer.t, &lexer);
-    //     if (lexer.t.type != TK_EOF) {
-    //         info(config, "Token: %c (type: %d, length: %d, line: %d)",
-    //              lexer.t.value ? *lexer.t.value : 'N',
-    //              lexer.t.type, lexer.t.length, lexer.linenumber);
-    //     }
-    // } while (lexer.t.type != TK_EOF);
+    arena_t* arena = arena_create(512);
+    ast_node_t* tree = parse(&lexer, arena);
+    
     
     return 0;
 }
