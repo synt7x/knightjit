@@ -255,7 +255,6 @@ ast_node_t* expression(lexer_t* lexer, arena_t* arena) {
 
 ast_node_t* parse(lexer_t* lexer, arena_t* arena) {
     ast_node_t* tree = expression(lexer, arena);
-    printf("prepare\n");
     consume(lexer);
 
     if (lexer->t.type != TK_EOF) {
