@@ -1,7 +1,7 @@
 EXECUTABLE := knight
 
 ARCH := X64
-CFLAGS := -Ofast -march=native -mtune=native -Wall -Wextra -std=c99 -D_CRT_SECURE_NO_WARNINGS
+CFLAGS := -Ofast -march=native -mtune=native -Wall -Wextra -std=c99
 CFLAGS += -fomit-frame-pointer -finline-functions -fno-stack-protector
 CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
 CC := clang
@@ -23,6 +23,7 @@ ifeq ($(OS),Windows_NT)
 	MKDIR = mkdir
 	EXECUTABLE := $(EXECUTABLE).exe
 	LDFLAGS := -Wl,/SUBSYSTEM:CONSOLE -Wl,/OPT:REF -Wl,/OPT:ICF
+	CFLAGS += -D_CRT_SECURE_NO_WARNINGS
 else
 	RM := rm -rf
 	EXISTS := test -d
