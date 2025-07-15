@@ -52,9 +52,8 @@ int main(int argc, char* argv[]) {
     
     info(config, "Parsed AST of size %zu", arena->size);
     map_t* symbol_table = map_create(8);
-    arena_t* ir_arena = arena_create(512);
+    //ir_t* ir = ir_create(tree, symbol_table, arena);
 
-    // ir_t* ir = ir_generate(tree, symbol_table, ir_arena);
     arena_free(arena);
     
     return 0;

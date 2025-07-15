@@ -2,8 +2,11 @@
 #define IR_H
 
 #include "jit/value.h"
+#include "map.h"
+#include "arena.h"
 
 typedef int ir_id_t;
+typedef int ir_var_t;
 
 typedef enum ir_type {
     IR_TYPE_NUMBER,
@@ -67,27 +70,31 @@ typedef struct ir_instruction {
     ir_type_t type;
 
     union {
-        struct {
-            ir_id_t* args;
-            int arg_count;
-        } function;
+        struct { // IR_*
+            ir_id_t* operands;
+            int operand_count;
+        } generic;
 
-        struct {
-            value_t value;
+        struct { // IR_CONST_NUMBER, IR_CONST_STRING, IR_CONST_BOOLEAN, IR_CONST_NULL
+            v_t value;
         } constant;
 
-        struct {
-            ir_id_t id;
-        } variable;
+        struct { // IR_LOAD, IR_STORE
+            ir_var_t var_id;
+        } var;
 
-        struct {
-            struct {
-                ir_id_t value;
-                ir_id_t block;
-            }* phi_args;
+        struct { // IR_PHI
+            ir_id_t* phi_values;
+            ir_id_t* phi_blocks;
             int phi_count;
         } phi;
-    }
+
+        struct { // IR_BRANCH
+            ir_id_t condition;
+            ir_id_t body_block;
+            ir_id_t fallback_block;
+        } branch;
+    };
 } ir_instruction_t;
 
 typedef struct ir_block {
@@ -107,15 +114,21 @@ typedef struct ir_block {
 
     ir_id_t* successors;
     int successor_count;
+
+    arena_t* arena;
 } ir_block_t;
 
 typedef struct ir_function {
-    ir_block_t* blocks;
+    ir_block_t** blocks;
     int block_count;
     int block_capacity;
 
     ir_id_t next_value_id;
     ir_id_t next_block_id;
+
+    map_t* symbol_table;
+    arena_t* arena;
+    ir_var_t var_id;
 } ir_function_t;
 
 #endif

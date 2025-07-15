@@ -45,6 +45,17 @@ static inline v_t v_create_string(const char* str) {
     return (v_t)heap_str | TYPE_STRING;
 }
 
+
+static inline v_t v_create_static_string(const char* str, size_t length) {
+    char* heap_str = malloc(length + 1);
+    if (!heap_str) {
+        panic("Memory allocation failed in v_create");
+    }
+    strncpy(heap_str, str, length);
+    heap_str[length] = '\0';
+    return (v_t)heap_str | TYPE_STRING;
+}
+
 static inline v_t v_create(v_type_t type, void* v) {
     if (type < TYPE_NUMBER || type > TYPE_BLOCK) {
         panic("Invalid type for v_create");

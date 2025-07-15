@@ -4,7 +4,6 @@ ARCH := X64
 CFLAGS := -Ofast -march=native -mtune=native -Wall -Wextra -std=c99 -D_CRT_SECURE_NO_WARNINGS
 CFLAGS += -fomit-frame-pointer -finline-functions -fno-stack-protector
 CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
-
 CC := clang
 
 GIT := git

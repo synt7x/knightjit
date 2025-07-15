@@ -4,7 +4,7 @@
 #include "parser.h"
 #include "lexer.h"
 
-ast_node_t* literal(ast_node_t* node, token_t token) {
+static inline ast_node_t* literal(ast_node_t* node, token_t token) {
     node->kind = AST_LITERAL;
     node->value = token.value;
     node->length = token.length;
@@ -36,7 +36,7 @@ ast_node_t* literal(ast_node_t* node, token_t token) {
     return node;
 }
 
-ast_node_t* nullary(ast_node_t* node, token_t token) {
+static inline ast_node_t* nullary(ast_node_t* node, token_t token) {
     switch (token.type) {
         case TK_PROMPT:
             node->kind = AST_PROMPT;
@@ -52,7 +52,7 @@ ast_node_t* nullary(ast_node_t* node, token_t token) {
     return node;
 }
 
-ast_node_t* unary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
+static inline ast_node_t* unary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     switch (lexer->t.type) {
         case TK_BLOCK:
             node->kind = AST_BLOCK;
@@ -103,7 +103,7 @@ ast_node_t* unary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     return node;
 }
 
-ast_node_t* binary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
+static inline ast_node_t* binary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     switch (lexer->t.type) {
         case TK_PLUS:
             node->kind = AST_PLUS;
@@ -165,7 +165,7 @@ ast_node_t* binary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     return node;
 }
 
-ast_node_t* ternary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
+static inline ast_node_t* ternary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     switch (lexer->t.type) {
         case TK_IF:
             node->kind = AST_IF;
@@ -196,7 +196,7 @@ ast_node_t* ternary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     return node;
 }
 
-ast_node_t* quaternary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
+static inline ast_node_t* quaternary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     if (lexer->t.type != TK_SET) {
         panic("Expected SET token for quaternary operation");
     }
@@ -255,6 +255,7 @@ ast_node_t* expression(lexer_t* lexer, arena_t* arena) {
 
 ast_node_t* parse(lexer_t* lexer, arena_t* arena) {
     ast_node_t* tree = expression(lexer, arena);
+    printf("prepare\n");
     consume(lexer);
 
     if (lexer->t.type != TK_EOF) {
