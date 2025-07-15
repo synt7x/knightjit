@@ -5,7 +5,7 @@ CFLAGS := -O3 -Wall -Wextra -std=c99 -D_CRT_SECURE_NO_WARNINGS
 CC := clang
 
 GIT := git
-LUA := luajit
+LUA := luajitb
 
 ifeq (, $(shell where $(CC)))
 $(error "C compiler '$(CC)' not found in PATH")
@@ -13,10 +13,6 @@ endif
 
 ifeq (, $(shell where $(GIT)))
 $(error "Git '$(GIT)' not found in PATH")
-endif
-
-ifeq (, $(shell where $(LUA)))
-$(error "Lua '$(LUA)' not found in PATH")
 endif
 
 ifeq ($(OS),Windows_NT)
@@ -38,6 +34,11 @@ DYNASM := $(LUAJIT)/dynasm
 SRC := src
 JIT := $(SRC)/jit
 
+ifeq (, $(shell where $(LUA)))
+LUA := $(LUAJIT)/minilua-$(EXECUTABLE)
+NEED_LUA := 1
+endif
+
 SOURCES := $(wildcard $(SRC)/*.c)
 JIT_SOURCES := $(wildcard $(JIT)/*.c)
 INCLUDE := $(wildcard $(SRC)/*.h)
@@ -49,7 +50,9 @@ OBJECTS := $(patsubst $(SRC)/%.c,$(ARTIFACTS)/%.o,$(SOURCES)) $(patsubst $(ARTIF
 all: build
 
 build: deps rebuild $(OBJECTS)
+	@echo ==== Building $(EXECUTABLE) ====
 	$(CC) -o $(TARGET)/$(EXECUTABLE) $(OBJECTS)
+	@echo ==== Built $(TARGET)/$(EXECUTABLE) ====
 
 $(ARTIFACTS)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) -c $(SRC)/$*.c -o $@ -I$(SRC) -I$(JIT)
@@ -61,9 +64,15 @@ $(ARTIFACTS)/%.$(ARCH).c: $(JIT)/%.c
 	$(LUA) $(DYNASM)/dynasm.lua -D $(ARCH) -o $@ $<
 
 deps:
+	@echo ==== Installing dependencies ====
 	$(EXISTS) "$(ARTIFACTS)" $(MKDIR) "$(ARTIFACTS)"
 	$(EXISTS) $(TARGET) $(MKDIR) $(TARGET)
 	$(EXISTS) $(LUAJIT) $(GIT) clone https://github.com/LuaJIT/LuaJIT.git $(LUAJIT)
+
+ifeq ($(NEED_LUA),1)
+	@echo ==== Building minilua ====
+	$(CC) -o $(LUA) $(CFLAGS) $(LUAJIT)/src/host/minilua.c
+endif
 
 rebuild:
 	$(RM) "$(ARTIFACTS)"
