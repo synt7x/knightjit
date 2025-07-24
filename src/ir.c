@@ -271,7 +271,7 @@ ir_id_t ir_generate_ssa(ast_node_t* root, ir_function_t* function, ir_block_t* e
                     ir_worklist_add(worklist, node->arg1, generated_block, 0);
                 } else {
                     node->instruction->block.result_id = node->arg1->result;
-                    node->result = instr->result;
+                    node->result = node->instruction->result;
                 }
                 break;
             case AST_CALL:
