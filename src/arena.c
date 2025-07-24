@@ -20,8 +20,8 @@ arena_t* arena_create(size_t initial_capacity) {
 void arena_free(arena_t* arena) {
     if (!arena) return;
 
-    if (!arena) return;
     for (size_t i = 0; i < arena->size; ++i) {
+        if (!arena->nodes[i]) continue;
         free(arena->nodes[i]);
     }
 

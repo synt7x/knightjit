@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "cli.h"
 
 #define dbg_verbose(config, fmt, ...) \
     config.flags & CONFIG_VERBOSE ? fprintf(stderr, fmt "\n", ##__VA_ARGS__) : (void)0

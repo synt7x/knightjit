@@ -48,16 +48,16 @@ int main(int argc, char* argv[]) {
         panic("No input provided. Use -h for help.");
     }
 
-    arena_t* arena = arena_create(512);
-    ast_node_t* tree = parse(&lexer, arena);
-
-    printf("[DEBUG] Parsed AST: %p %d\n", tree, tree->kind);
+    arena_t* ast_arena = arena_create(512);
+    ast_node_t* tree = parse(&lexer, ast_arena);
     
-    info(config, "Parsed AST of size %zu", arena->size);
+    info(config, "Parsed AST of size %zu", ast_arena->size);
     map_t* symbol_table = map_create(8);
+    arena_t* arena = arena_create(512);
     ir_function_t* ir = ir_create(tree, arena, symbol_table);
 
+    arena_free(ast_arena);
     arena_free(arena);
-    
+
     return 0;
 }

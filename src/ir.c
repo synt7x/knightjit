@@ -2,13 +2,58 @@
 #include "parser.h"
 #include "jit/value.h"
 
+const char* debug_ir_op_string(ir_op_t op) {
+    switch (op) {
+        case IR_CONST_NUMBER: return "CONST_NUMBER";
+        case IR_CONST_STRING: return "CONST_STRING";
+        case IR_CONST_BOOLEAN: return "CONST_BOOLEAN";
+        case IR_CONST_NULL: return "CONST_NULL";
+        case IR_CONST_ARRAY: return "CONST_ARRAY";
+        case IR_LOAD: return "LOAD";
+        case IR_STORE: return "STORE";
+        case IR_ADD: return "ADD";
+        case IR_SUB: return "SUB";
+        case IR_MUL: return "MUL";
+        case IR_DIV: return "DIV";
+        case IR_MOD: return "MOD";
+        case IR_POW: return "POW";
+        case IR_NEG: return "NEG";
+        case IR_LT: return "LT";
+        case IR_GT: return "GT";
+        case IR_EQ: return "EQ";
+        case IR_AND: return "AND";
+        case IR_OR: return "OR";
+        case IR_NOT: return "NOT";
+        case IR_GUARD: return "GUARD";
+        case IR_COERCE: return "COERCE";
+        case IR_BRANCH: return "BRANCH";
+        case IR_JUMP: return "JUMP";
+        case IR_CALL: return "CALL";
+        case IR_RETURN: return "RETURN";
+        case IR_OUTPUT: return "OUTPUT";
+        case IR_DUMP: return "DUMP";
+        case IR_RANDOM: return "RANDOM";
+        case IR_PROMPT: return "PROMPT";
+        case IR_QUIT: return "QUIT";
+        case IR_PHI: return "PHI";
+        case IR_BLOCK: return "BLOCK";
+        case IR_BOX: return "BOX";
+        case IR_ASCII: return "ASCII";
+        case IR_PRIME: return "PRIME";
+        case IR_ULTIMATE: return "ULTIMATE";
+        case IR_LENGTH: return "LENGTH";
+        case IR_GET: return "GET";
+        case IR_SET: return "SET";
+        default: panic("Unknown IR operation");
+    }
+};
+
 ir_worklist_t* ir_create_worklist(size_t capacity, arena_t* arena) {
     ir_worklist_t* worklist = arena_alloc(arena, sizeof(ir_worklist_t));
     if (!worklist) panic("Failed to allocate memory for IR worklist");
 
     worklist->items = arena_alloc(arena, sizeof(ir_worklist_item_t*) * capacity);
     if (!worklist->items) {
-        free(worklist);
         panic("Failed to allocate memory for IR worklist items");
     }
 
@@ -22,7 +67,7 @@ ir_worklist_t* ir_create_worklist(size_t capacity, arena_t* arena) {
 void ir_worklist_add(ir_worklist_t* worklist, ast_node_t* node, ir_block_t* block, int state) {
     if (worklist->size >= worklist->capacity) {
         worklist->capacity *= 2;
-        worklist->items = realloc(worklist->items, sizeof(ir_worklist_item_t*) * worklist->capacity);
+        worklist->items = arena_realloc(worklist->arena, worklist->items, sizeof(ir_worklist_item_t*) * worklist->capacity);
         if (!worklist->items) panic("Failed to reallocate memory for IR worklist items");
     }
 
@@ -57,6 +102,8 @@ v_t ir_load_literal(const char* value, size_t length, ast_literal_kind_t kind) {
             return v_create(TYPE_NUMBER, (void*)(intptr_t) strtol(value, NULL, 10));
         case AST_LITERAL_NULL:
             return v_create(TYPE_NULL, NULL);
+        case AST_LITERAL_ARRAY:
+            return v_create_list(2);
         case AST_LITERAL_IDENTIFIER:
             panic("Identifiers should not be loaded as literals in IR");
     }
@@ -73,8 +120,9 @@ ir_id_t ir_reverse(ir_function_t* function) {
 ir_instruction_t* ir_emit(ir_op_t op, ir_function_t* function, ir_block_t* block) {
     if (block->instruction_count >= block->instruction_capacity) {
         block->instruction_capacity = block->instruction_capacity ? block->instruction_capacity * 2 : 8;
-        block->instructions = realloc(block->instructions, sizeof(ir_instruction_t) * block->instruction_capacity);
+        block->instructions = arena_realloc(function->arena, block->instructions, sizeof(ir_instruction_t) * block->instruction_capacity);
     }
+
     ir_instruction_t* instr = &block->instructions[block->instruction_count++];
     instr->op = op;
     instr->result = ir_next(function);
@@ -86,8 +134,11 @@ ir_instruction_t* ir_emit(ir_op_t op, ir_function_t* function, ir_block_t* block
 void ir_successor_add(ir_block_t* block, ir_id_t successor) {
     if (block->successor_count >= block->successor_capacity) {
         block->successor_capacity = block->successor_capacity ? block->successor_capacity * 2 : 8;
-        block->successors = realloc(block->successors, sizeof(ir_id_t) * block->successor_capacity);
+        block->successors = arena_realloc(block->arena, block->successors, sizeof(ir_id_t) * block->successor_capacity);
     }
+
+    if (!block->successors) panic("Failed to allocate memory for successors in block %d", block->id);
+
     block->successors[block->successor_count++] = successor;
 }
 
@@ -97,9 +148,9 @@ void ir_successor_emit(ir_function_t* function, ir_block_t* block, ir_block_t* j
         instr->jump.block = jump;
         ir_successor_add(block, jump->id);
     } else {
-        for (size_t i = 0; i < block->successor_count; ++i) {
+        for (int i = 0; i < block->successor_count; ++i) {
             ir_block_t* succ = NULL;
-            for (size_t j = 0; j < function->block_count; ++j) {
+            for (int j = 0; j < function->block_count; ++j) {
                 if (function->blocks[j]->id == block->successors[i] && function->blocks[j] != jump) {
                     succ = function->blocks[j];
                     break;
@@ -122,9 +173,9 @@ void ir_successor_branch(ir_function_t* function, ir_block_t* block, ir_block_t*
 
         ir_successor_add(block, truthy->id);
     } else {
-        for (size_t i = 0; i < block->successor_count; ++i) {
+        for (int i = 0; i < block->successor_count; ++i) {
             ir_block_t* succ = NULL;
-            for (size_t j = 0; j < function->block_count; ++j) {
+            for (int j = 0; j < function->block_count; ++j) {
                 if (function->blocks[j]->id == block->successors[i] && function->blocks[j] != truthy && function->blocks[j] != falsey) {
                     succ = function->blocks[j];
                     break;
@@ -141,23 +192,24 @@ void ir_successor_branch(ir_function_t* function, ir_block_t* block, ir_block_t*
 ir_block_t* ir_create_block(ir_function_t* function) {
     if (function->block_count >= function->block_capacity) {
         function->block_capacity = function->block_capacity ? function->block_capacity * 2 : 8;
-        function->blocks = realloc(function->blocks, sizeof(ir_block_t*) * function->block_capacity);
+        function->blocks = arena_realloc(function->arena, function->blocks, sizeof(ir_block_t*) * function->block_capacity);
     }
 
-    ir_block_t* block = malloc(sizeof(ir_block_t));
+    ir_block_t* block = arena_alloc(function->arena, sizeof(ir_block_t));
     block->id = function->next_block_id++;
-    block->instructions = malloc(sizeof(ir_instruction_t) * 8);
+    block->instructions = arena_alloc(function->arena, sizeof(ir_instruction_t) * 8);
     block->instruction_count = 0;
     block->instruction_capacity = 8;
 
-    block->phis = malloc(sizeof(ir_instruction_t) * 2);
+    block->phis = arena_alloc(function->arena, sizeof(ir_instruction_t) * 2);
     block->phi_count = 0;
     block->phi_capacity = 2;
 
-    block->predecessors = malloc(sizeof(ir_id_t) * 2);
+    block->predecessors = arena_alloc(function->arena, sizeof(ir_id_t) * 2);
     block->predecessor_count = 0;
-    block->successors = malloc(sizeof(ir_id_t) * 2);
+    block->successors = arena_alloc(function->arena, sizeof(ir_id_t) * 3);
     block->successor_count = 0;
+    block->successor_capacity = 3;
 
     block->arena = function->arena;
     function->blocks[function->block_count++] = block;
@@ -165,7 +217,7 @@ ir_block_t* ir_create_block(ir_function_t* function) {
 }
 
 ir_id_t ir_generate_ssa(ast_node_t* root, ir_function_t* function, ir_block_t* entry) {
-    ir_worklist_t* worklist = ir_create_worklist(16, function->arena);
+    ir_worklist_t* worklist = ir_create_worklist(64, function->arena);
     ir_worklist_add(worklist, root, entry, 0);
 
     while (worklist->size > 0) {
@@ -181,6 +233,7 @@ ir_id_t ir_generate_ssa(ast_node_t* root, ir_function_t* function, ir_block_t* e
                     case AST_LITERAL_STRING: op = IR_CONST_STRING; break;
                     case AST_LITERAL_BOOLEAN: op = IR_CONST_BOOLEAN; break;
                     case AST_LITERAL_NULL: op = IR_CONST_NULL; break;
+                    case AST_LITERAL_ARRAY: op = IR_CONST_ARRAY; break;
                     default: panic("Unknown literal type");
                 }
 
@@ -316,6 +369,7 @@ ir_id_t ir_generate_ssa(ast_node_t* root, ir_function_t* function, ir_block_t* e
                     node->result = instr->result;
                     instr->generic.operands[0] = node->arg1->result;
                 }
+                break;
             case AST_BOX:
                 if (item->state == 0) {
                     ir_worklist_add(worklist, node, block, 1);
@@ -518,7 +572,7 @@ ir_id_t ir_generate_ssa(ast_node_t* root, ir_function_t* function, ir_block_t* e
             case AST_ASSIGN:
                 if (item->state == 0) {
                     ir_worklist_add(worklist, node, block, 1);
-                    ir_worklist_add(worklist, node->arg1, block, 0);
+                    ir_worklist_add(worklist, node->arg2, block, 0);
                 } else {
                     instr = ir_emit(IR_STORE, function, block);
                     var_id = map_get(function->symbol_table, node->arg1->value, node->arg1->length);
@@ -615,14 +669,50 @@ ir_id_t ir_generate_ssa(ast_node_t* root, ir_function_t* function, ir_block_t* e
                     }
                 }
                 break;
-
+            case AST_GET:
+                if (item->state == 0) {
+                    ir_worklist_add(worklist, node, block, 1);
+                    ir_worklist_add(worklist, node->arg3, block, 0);
+                    ir_worklist_add(worklist, node->arg2, block, 0);
+                    ir_worklist_add(worklist, node->arg1, block, 0);
+                } else {
+                    instr = ir_emit(IR_GET, function, block);
+                    instr->generic.operand_count = 3;
+                    instr->generic.operands = arena_alloc(function->arena, sizeof(ir_id_t) * 3);
+                    node->result = instr->result;
+                    instr->generic.operands[0] = node->arg1->result;
+                    instr->generic.operands[1] = node->arg2->result;
+                    instr->generic.operands[2] = node->arg3->result;
+                }
+                break;
+            case AST_SET:
+                if (item->state == 0) {
+                    ir_worklist_add(worklist, node, block, 1);
+                    ir_worklist_add(worklist, node->arg4, block, 0);
+                    ir_worklist_add(worklist, node->arg3, block, 0);
+                    ir_worklist_add(worklist, node->arg2, block, 0);
+                    ir_worklist_add(worklist, node->arg1, block, 0);
+                } else {
+                    instr = ir_emit(IR_SET, function, block);
+                    instr->generic.operand_count = 4;
+                    instr->generic.operands = arena_alloc(function->arena, sizeof(ir_id_t) * 4);
+                    node->result = instr->result;
+                    instr->generic.operands[0] = node->arg1->result;
+                    instr->generic.operands[1] = node->arg2->result;
+                    instr->generic.operands[2] = node->arg3->result;
+                    instr->generic.operands[3] = node->arg4->result;
+                }
+                break;
+            default: panic("Unknown AST node kind: %d", node->kind);
         }
     }
+
+    return root->result;
 }
 
 ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table) {
-    ir_function_t* function = malloc(sizeof(ir_function_t));
-    function->blocks = malloc(sizeof(ir_block_t*) * 8);
+    ir_function_t* function = arena_alloc(arena, sizeof(ir_function_t));
+    function->blocks = arena_alloc(arena, sizeof(ir_block_t*) * 8);
     function->block_count = 0;
     function->block_capacity = 8;
 
@@ -654,6 +744,12 @@ ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table) 
                     break;
                 case IR_CONST_STRING:
                     printf(" STRING CONST");
+                    break;
+                case IR_CONST_NULL:
+                    printf(" NULL CONST");
+                    break;
+                case IR_CONST_ARRAY:
+                    printf(" @");
                     break;
                 case IR_LOAD:
                     printf(" LOAD var_id=%d", instr->var.var_id);
@@ -688,7 +784,7 @@ ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table) 
                     printf(" PROMPT");
                     break;
                 default:
-                    printf(" operands=");
+                    printf(" %s operands=", debug_ir_op_string(instr->op));
                     for (int k = 0; k < instr->generic.operand_count; ++k) {
                         printf("%d ", instr->generic.operands[k]);
                     }
@@ -699,6 +795,7 @@ ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table) 
             printf("\n");
         }
     }
+
 
     return function;
 }

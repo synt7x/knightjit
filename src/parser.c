@@ -203,7 +203,6 @@ ast_node_t* quaternary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     }
 
     node->kind = AST_SET;
-    printf("[PARSER DEBUG] Set node->kind=%d at %p (quaternary)\n", node->kind, node);
 
     node->arg1 = expression(lexer, arena);
     if (!node->arg1) {

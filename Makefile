@@ -6,7 +6,7 @@ SHELL := cmd.exe
 endif
 
 ARCH := X64
-CFLAGS := -O2 -march=native -mtune=native -Wall -Wextra -std=c99
+CFLAGS := -O3 -march=native -mtune=native -Wall -Wextra -std=c99
 CFLAGS += -fomit-frame-pointer -finline-functions -fno-stack-protector
 CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
 CC := clang
