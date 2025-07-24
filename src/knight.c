@@ -11,6 +11,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "ir.h"
+#include "vm.h"
 
 #include "jit/value.h"
 
@@ -55,8 +56,12 @@ int main(int argc, char* argv[]) {
     map_t* symbol_table = map_create(8);
     arena_t* arena = arena_create(512);
     ir_function_t* ir = ir_create(tree, arena, symbol_table);
-
     arena_free(ast_arena);
+
+    if ((config.flags & CONFIG_JIT) == 0) {
+        vm_t* vm = vm_run(ir, arena);
+    }
+
     arena_free(arena);
 
     return 0;

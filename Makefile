@@ -7,8 +7,8 @@ endif
 
 ARCH := X64
 CFLAGS := -O3 -march=native -mtune=native -Wall -Wextra -std=c99
-CFLAGS += -fomit-frame-pointer -finline-functions -fno-stack-protector
-CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
+# CFLAGS += -finline-functions -fno-stack-protector
+# CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
 CC := clang
 
 GIT := git
@@ -27,8 +27,8 @@ ifeq ($(OS),Windows_NT)
 	EXISTS := if not exist
 	MKDIR := mkdir
 	EXECUTABLE := $(EXECUTABLE).exe
-	LDFLAGS := -Wl,/SUBSYSTEM:CONSOLE -Wl,/OPT:REF -Wl,/OPT:ICF -Wl,/STACK:8388608
-	CFLAGS += -D_CRT_SECURE_NO_WARNINGS
+	LDFLAGS := -Wl,/SUBSYSTEM:CONSOLE -Wl,/OPT:REF -Wl,/OPT:ICF -Wl,/STACK:8388608 -g
+	CFLAGS += -D_CRT_SECURE_NO_WARNINGS -g
 else
 	RM := rm -rf
 	EXISTS := test -d

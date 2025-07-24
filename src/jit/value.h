@@ -94,7 +94,22 @@ static inline v_t v_coerce_to_number(v_t v) {
 static inline v_t v_coerce_to_string(v_t v) {
     if (V_IS_STRING(v)) return v;
 
+    if (V_IS_NUMBER(v)) {
+        v_number_t number = (v_number_t)(v >> 3);
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "%ld", (long)number);
+        return v_create_string(buffer, strlen(buffer));
+    }
+
     panic("Cannot coerce v to string type");
+}
+
+static inline v_string_t string_from_v(v_t v) {
+    if (V_IS_STRING(v)) {
+        return (v_string_box_t*) (v & VALUE_MASK);
+    }
+
+    panic("Cannot get string from non-string v");
 }
 
 static inline v_t v_coerce_to_boolean(v_t v) {
