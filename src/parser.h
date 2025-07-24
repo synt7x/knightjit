@@ -4,7 +4,12 @@
 #include "arena.h"
 #include "lexer.h"
 
+typedef int ir_id_t;
+typedef struct ir_instruction ir_instruction_t;
+typedef struct ir_block ir_block_t;
+
 typedef enum ast_kind {
+    AST_IDENTIFIER,
     AST_LITERAL,
     AST_PROMPT,
     AST_RANDOM,
@@ -52,6 +57,9 @@ typedef struct ast_node ast_node_t;
 
 struct ast_node {
     ast_kind_t kind;
+    ir_id_t result;
+    ir_instruction_t* instruction;
+    ir_block_t* block;
 
     union {
         struct {

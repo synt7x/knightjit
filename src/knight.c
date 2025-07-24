@@ -10,6 +10,7 @@
 
 #include "lexer.h"
 #include "parser.h"
+#include "ir.h"
 
 #include "jit/value.h"
 
@@ -26,7 +27,7 @@ int main(int argc, char* argv[]) {
         config.flags & CONFIG_JIT ? "JIT" : "JIT-OFF"
     );
 
-    lexer_t lexer = {};
+    lexer_t lexer;
 
     if (config.flags & CONFIG_FILE && config.input) {
         info(config, "Reading input file: %s", config.input);
@@ -49,10 +50,12 @@ int main(int argc, char* argv[]) {
 
     arena_t* arena = arena_create(512);
     ast_node_t* tree = parse(&lexer, arena);
+
+    printf("[DEBUG] Parsed AST: %p %d\n", tree, tree->kind);
     
     info(config, "Parsed AST of size %zu", arena->size);
     map_t* symbol_table = map_create(8);
-    //ir_t* ir = ir_create(tree, symbol_table, arena);
+    ir_function_t* ir = ir_create(tree, arena, symbol_table);
 
     arena_free(arena);
     

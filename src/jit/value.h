@@ -10,10 +10,24 @@
 
 typedef uintptr_t v_t;
 typedef int32_t v_number_t;
-typedef char* v_string_t;
 typedef int32_t v_boolean_t;
 typedef uintptr_t v_block_t;
-typedef uintptr_t v_list_t;
+
+typedef struct v_string {
+    int ref_count;
+    int length;
+    char* data;
+} v_string_box_t;
+
+typedef struct v_list {
+    int ref_count;
+    int length;
+    int capacity;
+    v_t* items;
+} v_list_box_t;
+
+typedef v_list_box_t* v_list_t;
+typedef v_string_box_t* v_string_t;
 
 typedef enum {
     TYPE_NUMBER = 0,
@@ -35,25 +49,24 @@ typedef enum {
 #define V_IS_BLOCK(v) (V_TYPE(v) == TYPE_BLOCK)
 #define V_IS_LIST(v) (V_TYPE(v) == TYPE_LIST)
 
-static inline v_t v_create_string(const char* str) {
-    size_t len = strlen(str);
-    char* heap_str = malloc(len + 1);
-    if (!heap_str) {
-        panic("Memory allocation failed in v_create");
-    }
-    strcpy(heap_str, str);
-    return (v_t)heap_str | TYPE_STRING;
+static inline v_t v_create_string(const char* str, size_t length) {
+    v_string_box_t* box = malloc(sizeof(v_string_box_t) + length + 1);
+    if (!box) panic("Failed to allocate memory for string box");
+    box->ref_count = 1;
+    box->length = length;
+    box->data = (char*)(box + 1);
+    memcpy(box->data, str, length);
+    box->data[length] = '\0';
+    return (v_t)box | TYPE_STRING;
 }
 
-
-static inline v_t v_create_static_string(const char* str, size_t length) {
-    char* heap_str = malloc(length + 1);
-    if (!heap_str) {
-        panic("Memory allocation failed in v_create");
-    }
-    strncpy(heap_str, str, length);
-    heap_str[length] = '\0';
-    return (v_t)heap_str | TYPE_STRING;
+static inline v_t v_create_list(int capacity) {
+    v_list_box_t* box = malloc(sizeof(v_list_box_t) + sizeof(v_t) * capacity);
+    box->ref_count = 1;
+    box->length = 0;
+    box->capacity = capacity;
+    box->items = (v_t*)(box + 1);
+    return (v_t)box | TYPE_LIST;
 }
 
 static inline v_t v_create(v_type_t type, void* v) {
@@ -64,10 +77,6 @@ static inline v_t v_create(v_type_t type, void* v) {
     if (type == TYPE_BOOLEAN || type == TYPE_NUMBER) {
         return (v_t)((uint64_t)v<<3) | type;
     } else {
-        if (type == TYPE_STRING) {
-            return v_create_string((const char*)v);
-        }
-
         if ((uintptr_t)v & 0x7) {
             panic("Value must be 8-byte aligned in v_create");
         }

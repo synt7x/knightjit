@@ -73,7 +73,7 @@ void map_destroy(map_t* map) {
 }
 
 map_value_t map_get(map_t* map, const char* key, size_t length) {
-    if (!map || map->size == 0) return 0;
+    if (!map || map->size == 0) return -1;
 
     map_hash_t hashed = hash(key, length);
     size_t index = hashed & (map->capacity - 1);
@@ -81,8 +81,9 @@ map_value_t map_get(map_t* map, const char* key, size_t length) {
     for (size_t i = 0; i < map->capacity; i++) {
         size_t idx = (index + i) % map->capacity;
         if (map->entries[idx].hash == 0) {
-            return 0;
+            return -1;
         }
+
         if (map->entries[idx].hash == hashed && 
             strncmp(map->entries[idx].key, key, length) == 0 &&
             strlen(map->entries[idx].key) == length) {
@@ -90,7 +91,7 @@ map_value_t map_get(map_t* map, const char* key, size_t length) {
         }
     }
 
-    return 0;
+    return -1;
 }
 
 void map_set(map_t* map, const char* key, size_t length, map_value_t value) {

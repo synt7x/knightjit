@@ -4,7 +4,7 @@
 #include "parser.h"
 #include "lexer.h"
 
-static inline ast_node_t* literal(ast_node_t* node, token_t token) {
+ast_node_t* literal(ast_node_t* node, token_t token) {
     node->kind = AST_LITERAL;
     node->value = token.value;
     node->length = token.length;
@@ -24,6 +24,7 @@ static inline ast_node_t* literal(ast_node_t* node, token_t token) {
             break;
         case TK_IDENTIFIER:
             node->literal_kind = AST_LITERAL_IDENTIFIER;
+            node->kind = AST_IDENTIFIER;
             break;
         case TK_LIST:
             node->literal_kind = AST_LITERAL_ARRAY;
@@ -36,7 +37,7 @@ static inline ast_node_t* literal(ast_node_t* node, token_t token) {
     return node;
 }
 
-static inline ast_node_t* nullary(ast_node_t* node, token_t token) {
+ast_node_t* nullary(ast_node_t* node, token_t token) {
     switch (token.type) {
         case TK_PROMPT:
             node->kind = AST_PROMPT;
@@ -52,7 +53,7 @@ static inline ast_node_t* nullary(ast_node_t* node, token_t token) {
     return node;
 }
 
-static inline ast_node_t* unary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
+ast_node_t* unary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     switch (lexer->t.type) {
         case TK_BLOCK:
             node->kind = AST_BLOCK;
@@ -103,7 +104,7 @@ static inline ast_node_t* unary(ast_node_t* node, lexer_t* lexer, arena_t* arena
     return node;
 }
 
-static inline ast_node_t* binary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
+ast_node_t* binary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     switch (lexer->t.type) {
         case TK_PLUS:
             node->kind = AST_PLUS;
@@ -165,7 +166,7 @@ static inline ast_node_t* binary(ast_node_t* node, lexer_t* lexer, arena_t* aren
     return node;
 }
 
-static inline ast_node_t* ternary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
+ast_node_t* ternary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     switch (lexer->t.type) {
         case TK_IF:
             node->kind = AST_IF;
@@ -196,12 +197,13 @@ static inline ast_node_t* ternary(ast_node_t* node, lexer_t* lexer, arena_t* are
     return node;
 }
 
-static inline ast_node_t* quaternary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
+ast_node_t* quaternary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
     if (lexer->t.type != TK_SET) {
         panic("Expected SET token for quaternary operation");
     }
 
     node->kind = AST_SET;
+    printf("[PARSER DEBUG] Set node->kind=%d at %p (quaternary)\n", node->kind, node);
 
     node->arg1 = expression(lexer, arena);
     if (!node->arg1) {
@@ -228,7 +230,7 @@ static inline ast_node_t* quaternary(ast_node_t* node, lexer_t* lexer, arena_t* 
 
 ast_node_t* expression(lexer_t* lexer, arena_t* arena) {
     token_t token = consume(lexer);
-    ast_node_t* node = arena_alloc(arena, sizeof(ast_node_t));
+    void* node = arena_alloc(arena, sizeof(ast_node_t));
 
     switch (token.type) {
         case TK_EOF: panic("Unexpected end of input");
@@ -254,16 +256,16 @@ ast_node_t* expression(lexer_t* lexer, arena_t* arena) {
 }
 
 ast_node_t* parse(lexer_t* lexer, arena_t* arena) {
-    ast_node_t* tree = expression(lexer, arena);
+    void* node = expression(lexer, arena);
     consume(lexer);
 
     if (lexer->t.type != TK_EOF) {
         panic("Unexpected token after body: %s", lexer->t.value);
     }
 
-    if (!tree) {
+    if (!node) {
         panic("Failed to parse expression");
     }
 
-    return tree;
+    return node;
 }

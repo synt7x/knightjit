@@ -1,7 +1,12 @@
 EXECUTABLE := knight
 
+ifeq ($(OS),Windows_NT)
+SHELL := cmd.exe
+.SHELLFLAGS := /c
+endif
+
 ARCH := X64
-CFLAGS := -Ofast -march=native -mtune=native -Wall -Wextra -std=c99
+CFLAGS := -O2 -march=native -mtune=native -Wall -Wextra -std=c99
 CFLAGS += -fomit-frame-pointer -finline-functions -fno-stack-protector
 CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
 CC := clang
@@ -20,9 +25,9 @@ endif
 ifeq ($(OS),Windows_NT)
 	RM := rd /s /q
 	EXISTS := if not exist
-	MKDIR = mkdir
+	MKDIR := mkdir
 	EXECUTABLE := $(EXECUTABLE).exe
-	LDFLAGS := -Wl,/SUBSYSTEM:CONSOLE -Wl,/OPT:REF -Wl,/OPT:ICF
+	LDFLAGS := -Wl,/SUBSYSTEM:CONSOLE -Wl,/OPT:REF -Wl,/OPT:ICF -Wl,/STACK:8388608
 	CFLAGS += -D_CRT_SECURE_NO_WARNINGS
 else
 	RM := rm -rf

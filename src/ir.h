@@ -1,9 +1,11 @@
 #ifndef IR_H
 #define IR_H
 
-#include "jit/value.h"
 #include "map.h"
 #include "arena.h"
+
+#include "parser.h"
+#include "jit/value.h"
 
 typedef int ir_id_t;
 typedef int ir_var_t;
@@ -51,8 +53,10 @@ typedef enum ir_op {
     IR_RETURN,
 
     IR_OUTPUT,
+    IR_DUMP,
     IR_RANDOM,
     IR_PROMPT,
+    IR_QUIT,
     IR_BOX,
     IR_ASCII,
     IR_PRIME,
@@ -62,7 +66,10 @@ typedef enum ir_op {
     IR_SET,
 
     IR_PHI,
+    IR_BLOCK,
 } ir_op_t;
+
+typedef struct ir_block ir_block_t;
 
 typedef struct ir_instruction {
     ir_id_t result;
@@ -81,6 +88,7 @@ typedef struct ir_instruction {
 
         struct { // IR_LOAD, IR_STORE
             ir_var_t var_id;
+            ir_id_t value;
         } var;
 
         struct { // IR_PHI
@@ -90,10 +98,19 @@ typedef struct ir_instruction {
         } phi;
 
         struct { // IR_BRANCH
+            ir_block_t* truthy;
+            ir_block_t* falsey;
             ir_id_t condition;
-            ir_id_t body_block;
-            ir_id_t fallback_block;
         } branch;
+
+        struct {
+            ir_block_t* block;
+        } jump;
+
+        struct {
+            ir_id_t result_id;
+            v_t function;
+        } block;
     };
 } ir_instruction_t;
 
@@ -107,13 +124,16 @@ typedef struct ir_block {
     int phi_count;
     int phi_capacity;
 
-    ir_instruction_t* terminator;
+    int terminator;
 
     ir_id_t* predecessors;
     int predecessor_count;
 
     ir_id_t* successors;
     int successor_count;
+    int successor_capacity;
+
+    ir_id_t follow_id;
 
     arena_t* arena;
 } ir_block_t;
@@ -129,6 +149,23 @@ typedef struct ir_function {
     map_t* symbol_table;
     arena_t* arena;
     ir_var_t var_id;
+
+    ir_block_t* block;
 } ir_function_t;
+
+typedef struct ir_worklist_item {
+    ast_node_t* node;
+    ir_block_t* block;
+    int state;
+} ir_worklist_item_t;
+
+typedef struct ir_worklist {
+    ir_worklist_item_t** items;
+    size_t size;
+    size_t capacity;
+    arena_t* arena;
+} ir_worklist_t;
+
+ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table);
 
 #endif
