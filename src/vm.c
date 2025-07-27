@@ -257,7 +257,7 @@ static inline v_t vm_add(v_t left, v_t right) {
        return (v_t) ((uintptr_t)(l + r) << 3 | TYPE_NUMBER);
     } else if (V_IS_STRING(left)) {
         v_string_t l = (v_string_t) (left & VALUE_MASK);
-        v_string_t r = (v_string_t) (right & VALUE_MASK);
+        v_string_t r = (v_string_t) (coerced & VALUE_MASK);
 
         size_t length = l->length + r->length;
         char* joined = malloc(length + 1);
@@ -635,7 +635,7 @@ static inline v_t vm_set(v_t value, v_t index, v_t range, v_t replace) {
         v_list_t list = (v_list_t) (value & VALUE_MASK);
         v_list_t replace_list = (v_list_t) (v_coerce_to_list(replace) & VALUE_MASK);
 
-        if (idx < 0 || idx >= list->length || idx + len > list->length) {
+        if (idx < 0 || idx > list->length) {
             panic("Index %lld with range %lld out of bounds for list of length %d", idx, len, list->length);
         }
 
