@@ -9,7 +9,7 @@
 #include "debug.h"
 
 typedef uintptr_t v_t;
-typedef int32_t v_number_t;
+typedef int64_t v_number_t;
 typedef int32_t v_boolean_t;
 typedef uintptr_t v_block_t;
 
@@ -49,6 +49,18 @@ typedef enum {
 #define V_IS_BLOCK(v) (V_TYPE(v) == TYPE_BLOCK)
 #define V_IS_LIST(v) (V_TYPE(v) == TYPE_LIST)
 
+static inline const char* v_type(v_t v) {
+    switch (V_TYPE(v)) {
+        case TYPE_NUMBER: return "number";
+        case TYPE_STRING: return "string";
+        case TYPE_BOOLEAN: return "boolean";
+        case TYPE_NULL: return "null";
+        case TYPE_BLOCK: return "block";
+        case TYPE_LIST: return "list";
+        default: return "unknown";
+    }
+}
+
 static inline v_t v_create_string(const char* str, size_t length) {
     v_string_box_t* box = malloc(sizeof(v_string_box_t) + length + 1);
     if (!box) panic("Failed to allocate memory for string box");
@@ -61,11 +73,11 @@ static inline v_t v_create_string(const char* str, size_t length) {
 }
 
 static inline v_t v_create_list(int capacity) {
-    v_list_box_t* box = malloc(sizeof(v_list_box_t) + sizeof(v_t) * capacity);
+    v_list_box_t* box = malloc(sizeof(v_list_box_t));
     box->ref_count = 1;
     box->length = 0;
     box->capacity = capacity;
-    box->items = (v_t*)(box + 1);
+    box->items = (v_t*) malloc(sizeof(v_t) * capacity);
     return (v_t)box | TYPE_LIST;
 }
 
@@ -88,40 +100,132 @@ static inline v_t v_create(v_type_t type, void* v) {
 static inline v_t v_coerce_to_number(v_t v) {
     if (V_IS_NUMBER(v)) return v;
 
-    panic("Cannot coerce v to number type");
+    if (V_IS_STRING(v)) {
+        v_string_t str = (v_string_t) (v & VALUE_MASK);
+        char* endptr;
+        v_number_t number = strtoll(str->data, &endptr, 10);
+        if (*endptr != '\0') {
+            panic("Invalid number format in string: %s", str->data);
+        }
+
+        if (number < -(1LL << 60) || number > ((1LL << 60) - 1)) {
+            panic("Number %lld out of range (%lld to %lld) when coerced from %s", number, -(1LL << 60), (1LL << 60) - 1, str->data);
+        }
+
+        return number << 3;
+    } else if (V_IS_BOOLEAN(v)) {
+        return (v_t) (v >> 3 << 3);
+    } else if (V_IS_LIST(v)) {
+        v_list_t list = (v_list_t) (v & VALUE_MASK);
+
+        return (v_t) (list->length << 3);
+    } else if (V_IS_NULL(v)) {
+        return 0;
+    }
+
+    panic("Cannot coerce %s to number type", v_type(v));
 }
 
 static inline v_t v_coerce_to_string(v_t v) {
     if (V_IS_STRING(v)) return v;
 
     if (V_IS_NUMBER(v)) {
-        v_number_t number = (v_number_t)(v >> 3);
+        v_number_t number = (v_number_t) v >> 3;
         char buffer[32];
-        snprintf(buffer, sizeof(buffer), "%ld", (long)number);
+        snprintf(buffer, sizeof(buffer), "%lld", (int64_t)number);
         return v_create_string(buffer, strlen(buffer));
+    } else if (V_IS_BOOLEAN(v)) {
+        return v_create_string((v_boolean_t)(v >> 3) ? "true" : "false", (v_boolean_t)(v >> 3) ? 4 : 5);
+    } else if (V_IS_NULL(v)) {
+        return v_create_string("", 0);
+    } else if (V_IS_LIST(v)) {
+        v_list_t list = (v_list_t) (v & VALUE_MASK);
+        int length = 0;
+
+        for (int i = 0; i < list->length; ++i) {
+            v_t item = list->items[i];
+            v_t str = V_IS_STRING(item) ? item : v_coerce_to_string(item);
+            v_string_box_t* box = (v_string_box_t*)(str & VALUE_MASK);
+            length += box->length;
+
+            if (i < list->length - 1) length += 1;
+        }
+
+        char* buffer = malloc(length + 1);
+        if (!buffer) panic("Failed to allocate memory for list string conversion");
+
+        size_t offset = 0;
+        for (int i = 0; i < list->length; ++i) {
+            v_t item = list->items[i];
+            v_t str = V_IS_STRING(item) ? item : v_coerce_to_string(item);
+            v_string_box_t* box = (v_string_box_t*)(str & VALUE_MASK);
+
+            memcpy(buffer + offset, box->data, box->length);
+
+            offset += box->length;
+            if (i < list->length - 1) buffer[offset++] = '\n';
+        }
+
+        buffer[length] = '\0';
+
+        v_t result = v_create_string(buffer, length);
+        free(buffer);
+        return result;
     }
 
-    panic("Cannot coerce v to string type");
-}
-
-static inline v_string_t string_from_v(v_t v) {
-    if (V_IS_STRING(v)) {
-        return (v_string_box_t*) (v & VALUE_MASK);
-    }
-
-    panic("Cannot get string from non-string v");
+    panic("Cannot coerce type %s to string type", v_type(v));
 }
 
 static inline v_t v_coerce_to_boolean(v_t v) {
     if (V_IS_BOOLEAN(v)) return v;
 
-    panic("Cannot coerce v to boolean type");
+    if (V_IS_NUMBER(v)) {
+        return (v != 0) << 3 | TYPE_BOOLEAN;
+    } else if (V_IS_STRING(v)) {
+        v_string_t box = (v_string_t) (v & VALUE_MASK);
+        return (box->length > 0 << 3) | TYPE_BOOLEAN;
+    } else if (V_IS_NULL(v)) {
+        return TYPE_BOOLEAN;
+    } else if (V_IS_LIST(v)) {
+        v_list_t list = (v_list_t) (v & VALUE_MASK);
+        return (list->length > 0) << 3 | TYPE_BOOLEAN;
+    }
+
+    panic("Cannot coerce %s to boolean type", v_type(v));
 }
 
 static inline v_t v_coerce_to_list(v_t v) {
     if (V_IS_LIST(v)) return v;
 
-    panic("Cannot coerce v to list type");
+    if (V_IS_NUMBER(v)) {
+        v_number_t number = (v_number_t)(v >> 3);
+        if (number < 0) {
+            panic("Cannot coerce negative number to list of digits");
+        }
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "%lld", number);
+        size_t len = strlen(buffer);
+        v_t list = v_create_list((int)len);
+        v_list_t box = (v_list_t)(list & VALUE_MASK);
+        for (int i = 0; i < (int) len; ++i) {
+            if (i >= box->capacity) {
+                int cap = box->capacity * 2;
+                if (cap == 0) cap = 4;
+                v_t* items = realloc(box->items, sizeof(v_t) * cap);
+                if (!items) panic("Failed to realloc list items");
+                box->items = items;
+                box->capacity = cap;
+            }
+
+            v_t digit = ((v_t)(buffer[i] - '0') << 3) | TYPE_NUMBER;
+            box->items[i] = digit;
+            box->length++;
+        }
+
+        return list;
+    }
+
+    panic("Cannot coerce %s to list type", v_type(v));
 }
 
 static inline v_t v_coerce(v_t v, v_type_t type) {

@@ -94,8 +94,9 @@ typedef struct ir_instruction {
 
         struct { // IR_PHI
             ir_id_t* phi_values;
-            ir_id_t* phi_blocks;
+            ir_block_t** phi_blocks;
             int phi_count;
+            int phi_capacity;
         } phi;
 
         struct { // IR_BRANCH
@@ -110,7 +111,7 @@ typedef struct ir_instruction {
 
         struct {
             ir_id_t result_id;
-            v_t function;
+            ir_block_t* function;
         } block;
     };
 } ir_instruction_t;
@@ -167,6 +168,7 @@ typedef struct ir_worklist {
     arena_t* arena;
 } ir_worklist_t;
 
+const char* debug_ir_op_string(ir_op_t op);
 ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table);
 
 #endif

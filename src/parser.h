@@ -60,6 +60,7 @@ struct ast_node {
     ir_id_t result;
     ir_instruction_t* instruction;
     ir_block_t* block;
+    ir_block_t* top;
 
     union {
         struct {

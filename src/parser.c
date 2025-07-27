@@ -153,9 +153,21 @@ ast_node_t* binary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
             break;
     }
 
+    token_t token = lexer->t;
     node->arg1 = expression(lexer, arena);
+
+    if (token.type == TK_ASSIGN) {
+        if (!node->arg1) {
+            panic("Expected expression after = operator");
+        }
+
+        if (node->arg1->kind != AST_IDENTIFIER) {
+            panic("Expected identifier after = operator");
+        }
+    }
+
     if (!node->arg1) {
-        panic("Expected expression after binary operator: %c", *lexer->t.value);
+        panic("Expected expression after binary operator");
     }
 
     node->arg2 = expression(lexer, arena);

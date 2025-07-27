@@ -27,7 +27,13 @@ void lexer_load(token_t* token, lexer_t* lexer) {
         lexer->current++;
         lexer_load(token, lexer);
         return;
-    } else if (character == ' ' || character == '\t' || character == '\r') {
+    } else if (character == '#') {
+        while (lexer->current < lexer->size && lexer->buffer[lexer->current] != '\n') {
+            lexer->current++;
+        }
+        lexer_load(token, lexer);
+        return;
+    } else if (character == ' ' || character == '\t' || character == '\r' || character == '(' || character == ')' || character == ':') {
         lexer->current++;
         lexer_load(token, lexer);
         return;
@@ -123,6 +129,7 @@ void lexer_load(token_t* token, lexer_t* lexer) {
             case ']': token->type = TK_ULTIMATE; break;
             case ',': token->type = TK_BOX; break;
             case '@': token->type = TK_LIST; break;
+            case '~': token->type = TK_NEGATE; break;
             default: panic("Unknown character '%c' at line %d", character, lexer->linenumber);
         }
 
