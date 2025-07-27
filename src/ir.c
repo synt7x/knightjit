@@ -821,74 +821,74 @@ ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table) 
     function->block = entry_block;
     ir_generate_ssa(tree, function, entry_block);
 
-    printf("IR Function:\n");
-    for (int i = 0; i < function->block_count; ++i) {
-        ir_block_t* block = function->blocks[i];
-        printf("  Block %zu (id=%d):\n", i, block->id);
-        for (int j = 0; j < block->instruction_count; ++j) {
-            ir_instruction_t* instr = &block->instructions[j];
-            printf("    [%d] op=%d", instr->result, instr->op);
+    // printf("IR Function:\n");
+    // for (int i = 0; i < function->block_count; ++i) {
+    //     ir_block_t* block = function->blocks[i];
+    //     printf("  Block %zu (id=%d):\n", i, block->id);
+    //     for (int j = 0; j < block->instruction_count; ++j) {
+    //         ir_instruction_t* instr = &block->instructions[j];
+    //         printf("    [%d] op=%d", instr->result, instr->op);
 
-            switch (instr->op) {
-                case IR_CONST_NUMBER:
-                    printf(" NUMBER CONST value=%ld", (long)instr->constant.value >> 3);
-                    break;
-                case IR_CONST_BOOLEAN:
-                    printf(" BOOLEAN CONST value=%ld", (long)instr->constant.value >> 3);
-                    break;
-                case IR_CONST_STRING:
-                    printf(" STRING CONST");
-                    break;
-                case IR_CONST_NULL:
-                    printf(" NULL CONST");
-                    break;
-                case IR_CONST_ARRAY:
-                    printf(" @");
-                    break;
-                case IR_LOAD:
-                    printf(" LOAD var_id=%d", instr->var.var_id);
-                    break;
-                case IR_STORE:
-                    printf(" STORE var_id=%d value=%d", instr->var.var_id, instr->var.value);
-                    break;
-                case IR_BLOCK:
-                    printf(" BLOCK function=%p result_id=%d", (void*)(intptr_t)instr->block.function, instr->block.result_id);
-                    break;
-                case IR_BRANCH:
-                    printf(" BRANCH true=%d false=%d condition=%d", instr->branch.truthy->id, instr->branch.falsey->id, instr->branch.condition);
-                    break;
-                case IR_JUMP:
-                    printf(" JUMP block_id=%d", instr->jump.block->id);
-                    break;
-                case IR_PHI:
-                    printf(" PHI phi_count=%d", instr->phi.phi_count);
-                    printf(" values=");
-                    for (int k = 0; k < instr->phi.phi_count; ++k) {
-                        printf("%d ", instr->phi.phi_values[k]);
-                    }
-                    printf(" blocks=");
-                    for (int k = 0; k < instr->phi.phi_count; ++k) {
-                        printf("%p ", instr->phi.phi_blocks[k]);
-                    }
-                    break;
-                case IR_RANDOM:
-                    printf(" RANDOM");
-                    break;
-                case IR_PROMPT:
-                    printf(" PROMPT");
-                    break;
-                default:
-                    printf(" %s operands=", debug_ir_op_string(instr->op));
-                    for (int k = 0; k < instr->generic.operand_count; ++k) {
-                        printf("%d ", instr->generic.operands[k]);
-                    }
-                    break;
+    //         switch (instr->op) {
+    //             case IR_CONST_NUMBER:
+    //                 printf(" NUMBER CONST value=%ld", (long)instr->constant.value >> 3);
+    //                 break;
+    //             case IR_CONST_BOOLEAN:
+    //                 printf(" BOOLEAN CONST value=%ld", (long)instr->constant.value >> 3);
+    //                 break;
+    //             case IR_CONST_STRING:
+    //                 printf(" STRING CONST");
+    //                 break;
+    //             case IR_CONST_NULL:
+    //                 printf(" NULL CONST");
+    //                 break;
+    //             case IR_CONST_ARRAY:
+    //                 printf(" @");
+    //                 break;
+    //             case IR_LOAD:
+    //                 printf(" LOAD var_id=%d", instr->var.var_id);
+    //                 break;
+    //             case IR_STORE:
+    //                 printf(" STORE var_id=%d value=%d", instr->var.var_id, instr->var.value);
+    //                 break;
+    //             case IR_BLOCK:
+    //                 printf(" BLOCK function=%p result_id=%d", (void*)(intptr_t)instr->block.function, instr->block.result_id);
+    //                 break;
+    //             case IR_BRANCH:
+    //                 printf(" BRANCH true=%d false=%d condition=%d", instr->branch.truthy->id, instr->branch.falsey->id, instr->branch.condition);
+    //                 break;
+    //             case IR_JUMP:
+    //                 printf(" JUMP block_id=%d", instr->jump.block->id);
+    //                 break;
+    //             case IR_PHI:
+    //                 printf(" PHI phi_count=%d", instr->phi.phi_count);
+    //                 printf(" values=");
+    //                 for (int k = 0; k < instr->phi.phi_count; ++k) {
+    //                     printf("%d ", instr->phi.phi_values[k]);
+    //                 }
+    //                 printf(" blocks=");
+    //                 for (int k = 0; k < instr->phi.phi_count; ++k) {
+    //                     printf("%p ", instr->phi.phi_blocks[k]);
+    //                 }
+    //                 break;
+    //             case IR_RANDOM:
+    //                 printf(" RANDOM");
+    //                 break;
+    //             case IR_PROMPT:
+    //                 printf(" PROMPT");
+    //                 break;
+    //             default:
+    //                 printf(" %s operands=", debug_ir_op_string(instr->op));
+    //                 for (int k = 0; k < instr->generic.operand_count; ++k) {
+    //                     printf("%d ", instr->generic.operands[k]);
+    //                 }
+    //                 break;
                 
-            }
+    //         }
 
-            printf("\n");
-        }
-    }
+    //         printf("\n");
+    //     }
+    // }
 
 
     return function;
