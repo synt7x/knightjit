@@ -58,9 +58,15 @@ int main(int argc, char* argv[]) {
     ir_function_t* ir = ir_create(tree, arena, symbol_table);
     arena_free(ast_arena);
 
+    #ifndef JIT_OFF
     if ((config.flags & CONFIG_JIT) == 0) {
+    #endif
+
         vm_t* vm = vm_run(ir, arena);
+
+    #ifndef JIT_OFF
     }
+    #endif
 
     arena_free(arena);
 

@@ -87,7 +87,7 @@ static inline v_t v_create(v_type_t type, void* v) {
     }
     
     if (type == TYPE_BOOLEAN || type == TYPE_NUMBER) {
-        return (v_t)((uint64_t)v<<3) | type;
+        return (v_t) ((uint64_t)v << 3) | type;
     } else {
         if ((uintptr_t)v & 0x7) {
             panic("Value must be 8-byte aligned in v_create");
@@ -114,7 +114,7 @@ static inline v_t v_coerce_to_number(v_t v) {
 
         return number << 3;
     } else if (V_IS_BOOLEAN(v)) {
-        return (v_t) (v >> 3 << 3);
+        return (v_t) (v & VALUE_MASK);
     } else if (V_IS_LIST(v)) {
         v_list_t list = (v_list_t) (v & VALUE_MASK);
 
@@ -183,7 +183,7 @@ static inline v_t v_coerce_to_boolean(v_t v) {
         return (v != 0) << 3 | TYPE_BOOLEAN;
     } else if (V_IS_STRING(v)) {
         v_string_t box = (v_string_t) (v & VALUE_MASK);
-        return (box->length > 0 << 3) | TYPE_BOOLEAN;
+        return (box->length > 0) << 3 | TYPE_BOOLEAN;
     } else if (V_IS_NULL(v)) {
         return TYPE_BOOLEAN;
     } else if (V_IS_LIST(v)) {

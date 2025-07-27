@@ -505,7 +505,7 @@ static inline v_t vm_gt(v_t left, v_t right) {
         v_string_t l = (v_string_t) (left & VALUE_MASK);
         v_string_t r = (v_string_t) (coerced & VALUE_MASK);
 
-        return ((v_t) (strcmp(l->data, r->data) > 0 << 3)) | TYPE_BOOLEAN;
+        return ((v_t) (strcmp(l->data, r->data) > 0) << 3) | TYPE_BOOLEAN;
     } else if (V_IS_BOOLEAN(left)) {
         return ((v_t) (left > coerced) << 3 | TYPE_BOOLEAN);
     }
@@ -525,7 +525,7 @@ static inline v_t vm_lt(v_t left, v_t right) {
         v_string_t l = (v_string_t) (left & VALUE_MASK);
         v_string_t r = (v_string_t) (right & VALUE_MASK);
 
-        return ((v_t) (strcmp(l->data, r->data) < 0 << 3)) | TYPE_BOOLEAN;
+        return ((v_t) (strcmp(l->data, r->data) < 0) << 3) | TYPE_BOOLEAN;
     } else if (V_IS_BOOLEAN(left)) {
         return ((v_t) (left < coerced) << 3 | TYPE_BOOLEAN);
     }

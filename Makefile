@@ -9,6 +9,7 @@ ARCH := X64
 CFLAGS := -O3 -march=native -mtune=native -Wall -Wextra -std=c99
 CFLAGS += -finline-functions -fno-stack-protector
 CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
+CFLAGS += -DJIT_OFF
 CC := clang
 
 GIT := git
