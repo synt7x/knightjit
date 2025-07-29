@@ -249,7 +249,7 @@ static inline v_t v_coerce_to_list(v_t v) {
 }
 
 static inline v_t v_coerce(v_t v, v_type_t type) {
-    if (V_TYPE(v) == type) return v;
+    if ((v_type_t) V_TYPE(v) == type) return v;
 
     switch (type) {
         case TYPE_NUMBER: return v_coerce_to_number(v);

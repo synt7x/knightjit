@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     map_t* symbol_table = map_create(8);
 
     arena_t* arena = arena_create(512);
-    ir_function_t* ir = ir_create(tree, arena, symbol_table, &config);
+    ir_function_t* ir = ir_create(tree, arena, symbol_table);
     ir_optimize(ir);
 
     arena_free(ast_arena);
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
         printf("IR (%p):\n", function);
         for (int i = 0; i < function->block_count; ++i) {
             ir_block_t* block = function->blocks[i];
-            printf("  Block %zu (id=%d %p):\n", i, block->id, block);
+            printf("  Block %d (id=%d %p):\n", i, block->id, block);
             for (int j = 0; j < block->instruction_count; ++j) {
                 ir_instruction_t* instr = &block->instructions[j];
                 printf("    [%d] op=%d", instr->result, instr->op);

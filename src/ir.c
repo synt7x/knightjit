@@ -3,6 +3,8 @@
 #include "parser.h"
 #include "jit/value.h"
 
+#include <stddef.h>
+
 const char* debug_ir_op_string(ir_op_t op) {
     switch (op) {
         case IR_CONST_NUMBER: return "CONST_NUMBER";
@@ -108,6 +110,8 @@ v_t ir_load_literal(const char* value, size_t length, ast_literal_kind_t kind) {
         case AST_LITERAL_IDENTIFIER:
             panic("Identifiers should not be loaded as literals in IR");
     }
+
+    panic("Unknown literal kind %d", kind);
 }
 
 ir_id_t ir_next(ir_function_t* function) {
@@ -808,7 +812,7 @@ ir_id_t ir_generate_ssa(ast_node_t* root, ir_function_t* function, ir_block_t* e
     return root->result;
 }
 
-ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table, cli_config_t* config) {
+ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table) {
     ir_function_t* function = arena_alloc(arena, sizeof(ir_function_t));
     function->blocks = arena_alloc(arena, sizeof(ir_block_t*) * 8);
     function->block_count = 0;

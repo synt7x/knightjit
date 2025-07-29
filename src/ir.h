@@ -170,6 +170,6 @@ typedef struct ir_worklist {
 } ir_worklist_t;
 
 const char* debug_ir_op_string(ir_op_t op);
-ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table, cli_config_t* config);
+ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table);
 
 #endif

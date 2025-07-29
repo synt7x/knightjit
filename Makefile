@@ -1,44 +1,45 @@
 EXECUTABLE := knight
 
 SEP := /
-
-ifeq ($(OS),Windows_NT)
-SEP := \\
-SHELL := cmd.exe
-.SHELLFLAGS := /c
-endif
-
 ARCH := X64
+
+CC := gcc
+
 CFLAGS := -O3 -march=native -mtune=native -Wall -Wextra -std=c99
 CFLAGS += -finline-functions -fno-stack-protector
 CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
 CFLAGS += -DJIT_OFF
-CC := clang
 
 GIT := git
 LUA := luajit
 
-ifeq (, $(shell where $(CC)))
-$(error "C compiler '$(CC)' not found in PATH")
-endif
-
-ifeq (, $(shell where $(GIT)))
-$(error "Git '$(GIT)' not found in PATH")
-endif
-
 ifeq ($(OS),Windows_NT)
 	RM := rd /s /q
+	WHICH := where
 	EXISTS := if not exist
 	MKDIR := mkdir
 	EXECUTABLE := $(EXECUTABLE).exe
-	LDFLAGS := -Wl,/SUBSYSTEM:CONSOLE -Wl,/OPT:REF -Wl,/OPT:ICF -g
+# 	LDFLAGS := -Wl,/SUBSYSTEM:CONSOLE -Wl,/OPT:REF -Wl,/OPT:ICF -g
 	CFLAGS += -D_CRT_SECURE_NO_WARNINGS -g
+
+	SEP := \\
+	SHELL := cmd.exe
+	.SHELLFLAGS := /c
 else
 	RM := rm -rf
+	WHICH := which
 	EXISTS := test -d
 	MKDIR := || mkdir -p
 	GIT := || $(GIT)
 	LDFLAGS := -Wl,--gc-sections -s -Wl,--strip-all
+endif
+
+ifeq (, $(shell $(WHICH) $(CC)))
+$(error "C compiler '$(CC)' not found in PATH")
+endif
+
+ifeq (, $(shell $(WHICH) $(GIT)))
+$(error "Git '$(GIT)' not found in PATH")
 endif
 
 TARGET := target

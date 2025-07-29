@@ -72,7 +72,7 @@ static inline ir_block_t* vm_call(
     }
 
     vm_stack_item_t* item;
-    if (stack->size < stack->capacity && stack->items && &stack->items[stack->size]) {
+    if (stack->size < stack->capacity && stack->items) {
         item = &stack->items[stack->size];
     } else {
         item = arena_alloc(arena, sizeof(vm_stack_item_t));

@@ -464,7 +464,7 @@ static inline v_t vm_get(v_t value, v_t index, v_t range) {
         }
 
         if (idx < 0 || (size_t) idx >= list->length || (size_t) idx + (size_t) len > list->length) {
-            panic("Index %lld with range %lld out of bounds for list of length %d", idx, len, list->length);
+            panic("Index %zu with range %zu out of bounds for list of length %zu", idx, len, list->length);
         }
 
         if (len == 1) {
@@ -488,7 +488,7 @@ static inline v_t vm_get(v_t value, v_t index, v_t range) {
         }
 
         if (idx < 0 || (size_t) idx >= str->length || (size_t) idx + (size_t) len > str->length) {
-            panic("Index %lld with range %lld out of bounds for string of length %d", (int64_t) idx, (int64_t) len, str->length);
+            panic("Index %lld with range %lld out of bounds for string of length %zu", idx, len, str->length);
         }
 
         if (len == 1) {
@@ -525,7 +525,7 @@ static inline v_t vm_set(v_t value, v_t index, v_t range, v_t replace) {
         v_list_t replace_list = (v_list_t) (v_coerce_to_list(replace) & VALUE_MASK);
 
         if (idx < 0 || (size_t) idx > list->length) {
-            panic("Index %lld with range %lld out of bounds for list of length %d", idx, len, list->length);
+            panic("Index %lld with range %lld out of bounds for list of length %zu", idx, len, list->length);
         }
 
         v_list_t alt = (v_list_t) (v_create_list(list->length - len + replace_list->length) & VALUE_MASK);
@@ -550,7 +550,7 @@ static inline v_t vm_set(v_t value, v_t index, v_t range, v_t replace) {
         v_string_t substr = (v_string_t) (v_coerce_to_string(replace) & VALUE_MASK);
 
         if (idx < 0 || (size_t) idx > str->length || (size_t) idx + (size_t) len > str->length || len < 0) {
-            panic("Index %lld with range %lld out of bounds for string of length %d", idx, len, str->length);
+            panic("Index %lld with range %lld out of bounds for string of length %zu", idx, len, str->length);
         }
 
         size_t new_length = str->length - len + substr->length;
