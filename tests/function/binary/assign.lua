@@ -1,0 +1,35 @@
+local test = require("tests/harness")
+
+return section("ASSIGN", function()
+	it("assigns to variables", function()
+		test.assert("12", "; = a 12 : a")
+	end)
+
+	it("returns its given value", function()
+		test.assert("12", "= a 12")
+	end)
+
+	it("accepts blocks as the second operand", function()
+		test.must("= foo BLOCK QUIT 1")
+	end)
+
+	it("only accepts a variable as the first argument", function()
+		test.refute("= 1 1")
+		test.refute("= 'foo' 1")
+		test.refute("= TRUE 1")
+		test.refute("= FALSE 1")
+		test.refute("= NULL 1")
+		test.refute("= @ 1")
+	end)
+
+	it("does not accept BLOCK values for the first arg", function()
+		test.refute("; = a 3 : = (BLOCK a) 1")
+		test.refute("= (BLOCK QUIT 0) 1")
+	end)
+
+	it("requires exactly two arguments", function()
+		test.refute("=")
+		test.refute("= a")
+		test.must("= a 1")
+	end)
+end)

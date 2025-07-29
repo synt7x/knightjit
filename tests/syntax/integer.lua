@@ -1,0 +1,22 @@
+local test = require("tests/harness")
+
+return section("INTEGER", function()
+	it("parses basic integers properly", function()
+		test.assert("0", "0")
+		test.assert("1", "1")
+		test.assert("-1", "~1")
+		test.assert("123", "123")
+		test.assert("445", "445")
+		test.assert("111121", "111121")
+		test.assert("-5189023", "~5189023")
+	end)
+
+	it("doesnt recognize leading 0 as octal", function()
+		test.assert("11", "011")
+	end)
+
+	it("parses the minimum and maximum integers", function()
+		test.assert("-2147483647", "~2147483647")
+		test.assert("2147483647", "2147483647")
+	end)
+end)

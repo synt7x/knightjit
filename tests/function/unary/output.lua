@@ -1,0 +1,47 @@
+local test = require("tests/harness")
+
+return section("OUTPUT", function()
+	it("just prints a newline with no string", function()
+		test.todo('OUTPUT "" -- assert output: \\n')
+	end)
+
+	it("should return NULL", function()
+		test.todo('DUMP OUTPUT "hello" -- assert output: hello\\nnull')
+	end)
+
+	it("prints normally", function()
+		test.todo('OUTPUT "1" -- assert output: 1\\n')
+		test.todo('OUTPUT "hello world" -- assert output: hello world\\n')
+	end)
+
+	it("prints newlines correctly", function()
+		test.todo('OUTPUT "foobar\\nbaz" -- assert output: foobar\\nbaz\\n')
+		test.todo('OUTPUT "foobar\\nbaz\\n" -- assert output: foobar\\nbaz\\n\\n')
+	end)
+
+	it("wont print a newline with a trailing \\`\\`", function()
+		test.todo('OUTPUT \\"\\ -- assert output: ')
+		test.todo('OUTPUT "hello\\\\" -- assert output: hello')
+		test.todo('OUTPUT "world\\n\\\\" -- assert output: world\\n')
+	end)
+
+	it("converts values to a string", function()
+		test.todo("OUTPUT 123 -- assert output: 123\\n")
+		test.todo("OUTPUT ~123 -- assert output: -123\\n")
+		test.todo("OUTPUT TRUE -- assert output: true\\n")
+		test.todo("OUTPUT FALSE -- assert output: false\\n")
+		test.todo("OUTPUT NULL -- assert output: \\n")
+		test.todo("OUTPUT @ -- assert output: \\n")
+		test.todo("OUTPUT +@123 -- assert output: 1\\n2\\n3\\n")
+	end)
+
+	it("does not allow blocks or variables as the first operand (strict types)", function()
+		test.refute('; = a "3" : OUTPUT BLOCK a')
+		test.refute("OUTPUT BLOCK QUIT 0")
+	end)
+
+	it("requires exactly one argument (argument count)", function()
+		test.refute("OUTPUT")
+		test.must('OUTPUT "1"')
+	end)
+end)

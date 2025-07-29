@@ -5,6 +5,7 @@ typedef enum flags {
     CONFIG_VERBOSE = 1 << 0,
     CONFIG_JIT = 1 << 1,
     CONFIG_FILE = 1 << 2,
+    CONFIG_IR = 1 << 3,
 } flags_t;
 
 typedef struct cli_config {

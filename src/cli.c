@@ -12,6 +12,7 @@ void cli_help() {
     printf("  -h, --help           Show this help message\n");
     printf("  -e, --execute        Execute a string of Knight code\n");
     printf("  -j, --jit-off        Disable JIT compilation\n");
+    printf("  -d, --debug          View debug output for IR\n");
 }
 
 cli_config_t cli_parse(int argc, char* argv[]) {
@@ -36,6 +37,8 @@ cli_config_t cli_parse(int argc, char* argv[]) {
                 panic("No string specified for -e");
                 exit(1);
             }
+        } else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--debug") == 0) {
+            config.flags |= CONFIG_IR;
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             cli_help();
             exit(0);

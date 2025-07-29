@@ -54,9 +54,12 @@ int main(int argc, char* argv[]) {
     
     info(config, "Parsed AST of size %zu", ast_arena->size);
     map_t* symbol_table = map_create(8);
+
     arena_t* arena = arena_create(512);
-    ir_function_t* ir = ir_create(tree, arena, symbol_table);
+    ir_function_t* ir = ir_create(tree, arena, symbol_table, &config);
     arena_free(ast_arena);
+
+    info(config, "Created IR with %d blocks, total size of %zu bytes", ir->block_count, arena->size);
 
     #ifndef JIT_OFF
     if ((config.flags & CONFIG_JIT) == 0) {

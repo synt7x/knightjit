@@ -1,6 +1,9 @@
 EXECUTABLE := knight
 
+SEP := /
+
 ifeq ($(OS),Windows_NT)
+SEP := \\
 SHELL := cmd.exe
 .SHELLFLAGS := /c
 endif
@@ -43,6 +46,7 @@ ARTIFACTS := $(TARGET)/artifacts
 LUAJIT := $(TARGET)/luajit
 DYNASM := $(LUAJIT)/dynasm
 SRC := src
+TESTS := tests
 JIT := $(SRC)/jit
 
 ifeq (, $(shell where $(LUA)))
@@ -56,7 +60,7 @@ INCLUDE := $(wildcard $(SRC)/*.h)
 PRE := $(patsubst $(JIT)/%.c,$(ARTIFACTS)/%.$(ARCH).c,$(JIT_SOURCES))
 OBJECTS := $(patsubst $(SRC)/%.c,$(ARTIFACTS)/%.o,$(SOURCES)) $(patsubst $(ARTIFACTS)/%.$(ARCH).c,$(ARTIFACTS)/%.o,$(PRE))
 
-.PHONY: all clean deps
+.PHONY: all clean deps build rebuild test strict increment
 
 all: build
 
@@ -91,3 +95,11 @@ rebuild:
 
 clean:
 	$(RM) target
+
+test:
+	$(LUA) $(TESTS)/test.lua $(TARGET)$(SEP)$(EXECUTABLE) -stop
+
+strict:
+	$(LUA) $(TESTS)/test.lua $(TARGET)$(SEP)$(EXECUTABLE)
+
+increment: build test

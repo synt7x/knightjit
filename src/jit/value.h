@@ -102,11 +102,9 @@ static inline v_t v_coerce_to_number(v_t v) {
 
     if (V_IS_STRING(v)) {
         v_string_t str = (v_string_t) (v & VALUE_MASK);
+
         char* endptr;
         v_number_t number = strtoll(str->data, &endptr, 10);
-        if (*endptr != '\0') {
-            panic("Invalid number format in string: %s", str->data);
-        }
 
         if (number < -(1LL << 60) || number > ((1LL << 60) - 1)) {
             panic("Number %lld out of range (%lld to %lld) when coerced from %s", number, -(1LL << 60), (1LL << 60) - 1, str->data);
@@ -223,6 +221,28 @@ static inline v_t v_coerce_to_list(v_t v) {
         }
 
         return list;
+    } else if (V_IS_STRING(v)) {
+        v_string_t str = (v_string_t) (v & VALUE_MASK);
+        v_t list = v_create_list(str->length);
+        v_list_t box = (v_list_t)(list & VALUE_MASK);
+
+        for (int i = 0; i < str->length; ++i) {
+            if (i >= box->capacity) {
+                int cap = box->capacity * 2;
+                if (cap == 0) cap = 4;
+                v_t* items = realloc(box->items, sizeof(v_t) * cap);
+                if (!items) panic("Failed to realloc list items");
+                box->items = items;
+                box->capacity = cap;
+            }
+
+            box->items[i] = v_create_string(&str->data[i], 1);
+            box->length++;
+        }
+
+        return list;
+    } else if (V_IS_NULL(v)) {
+        return v_create_list(0);
     }
 
     panic("Cannot coerce %s to list type", v_type(v));

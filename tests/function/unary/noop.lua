@@ -1,0 +1,22 @@
+local test = require("tests/harness")
+
+return section(":", function()
+	it("simply returns its argument", function()
+		test.assert(4, ": 4")
+		test.assert("hi", ': "hi"')
+		test.assert(true, ": TRUE")
+		test.assert(false, ": FALSE")
+		test.assert(nil, ": NULL")
+		test.assert({}, ": @")
+	end)
+
+	it("also works with BLOCK return values", function()
+		test.assert(3, "; = a 3 CALL : BLOCK a ")
+		test.assert(5, "; = a 3 CALL : BLOCK + a 2")
+	end)
+
+	it("requires exactly one argument (argument count)", function()
+		test.refute(":")
+		test.must(": 1")
+	end)
+end)

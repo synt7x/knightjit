@@ -1,0 +1,17 @@
+local test = require("tests/harness")
+
+return section("DUMP", function()
+	it("requires exactly one argument (argument count)", function()
+		test.refute("DUMP")
+		test.must('DUMP "1"')
+	end)
+
+	it("returns exactly the argument it was provided", function()
+		test.assert("1", "1")
+		test.assert("true", "TRUE")
+		test.assert("false", "FALSE")
+		test.assert("null", "NULL")
+		test.assert("12", "12")
+		test.assert("[]", "@")
+	end)
+end)

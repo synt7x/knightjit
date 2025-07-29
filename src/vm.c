@@ -1,41 +1,6 @@
 #include "vm.h"
 #include "math.h"
 
-typedef struct register_pool {
-    v_t** arrays;
-    int count;
-    int capacity;
-    int frame_size;
-    arena_t* arena;
-} register_pool_t;
-
-static inline void register_pool_init(register_pool_t* pool, int frame_size, arena_t* arena) {
-    pool->count = 0;
-    pool->capacity = 16;
-    pool->frame_size = frame_size;
-    pool->arena = arena;
-    pool->arrays = arena_alloc(arena, sizeof(v_t*) * pool->capacity);
-    if (!pool->arrays) panic("Failed to allocate register pool");
-}
-
-static inline v_t* register_pool_acquire(register_pool_t* pool) {
-    if (pool->count > 0) {
-        return pool->arrays[--pool->count];
-    }
-    v_t* arr = arena_alloc(pool->arena, sizeof(v_t) * pool->frame_size);
-    if (!arr) panic("Register pool/arena exhausted: too much recursion or too many calls");
-    return arr;
-}
-
-static inline void register_pool_release(register_pool_t* pool, v_t* array) {
-    if (pool->count >= pool->capacity) {
-        pool->capacity *= 4;
-        pool->arrays = arena_realloc(pool->arena, pool->arrays, sizeof(v_t*) * pool->capacity);
-        if (!pool->arrays) panic("Failed to grow register pool");
-    }
-    pool->arrays[pool->count++] = array;
-}
-
 vm_t* vm_init(ir_function_t* function, arena_t* arena) {
     vm_t* vm = arena_alloc(arena, sizeof(vm_t));
     if (!vm) panic("Failed to allocate memory for VM");
@@ -92,32 +57,9 @@ static inline v_t vm_prompt() {
     return result;
 }
 
-typedef struct {
-    int* indices;
-    int count;
-    int capacity;
-} load_reg_list_t;
-
-static void load_reg_list_init(load_reg_list_t* list) {
-    list->count = 0;
-    list->capacity = 8;
-    list->indices = malloc(sizeof(int) * list->capacity);
-}
-
-static void load_reg_list_add(load_reg_list_t* list, int reg) {
-    for (int i = 0; i < list->count; ++i) {
-        if (list->indices[i] == reg) return;
-    }
-    if (list->count >= list->capacity) {
-        list->capacity *= 2;
-        list->indices = realloc(list->indices, sizeof(int) * list->capacity);
-    }
-    list->indices[list->count++] = reg;
-}
-
 static inline ir_block_t* vm_call(
     ir_block_t* origin, ir_block_t* previous, int index, ir_id_t result, v_t block,
-    vm_stack_t* stack, arena_t* arena, v_t** registers_ptr, register_pool_t* reg_pool, load_reg_list_t* load_regs
+    vm_stack_t* stack, arena_t* arena, v_t** registers_ptr, vm_t* vm
 ) {
     ir_block_t* target = (ir_block_t*) (block & VALUE_MASK);
     if (!V_IS_BLOCK(block)) panic("Expected a block type for call, got %s", v_type(block));
@@ -144,14 +86,9 @@ static inline ir_block_t* vm_call(
     item->registers = *registers_ptr;
 
     stack->items[stack->size++] = *item;
+    vm->registers = malloc(sizeof(v_t) * vm->function->next_value_id);
+    memset(vm->registers, 0, sizeof(v_t) * vm->function->next_value_id);
 
-    v_t* new_registers = register_pool_acquire(reg_pool);
-
-    for (int i = 0; i < load_regs->count; ++i) {
-        int reg = load_regs->indices[i];
-        new_registers[reg] = (*registers_ptr)[reg];
-    }
-    *registers_ptr = new_registers;
 
     return target;
 }
@@ -160,6 +97,7 @@ static inline vm_stack_item_t* vm_return(vm_stack_t* stack) {
     if (stack->size == 0) {
         panic("Attempted to return from a non-BLOCK");
     }
+
     return &stack->items[--stack->size];
 }
 
@@ -171,7 +109,7 @@ static inline v_t vm_ascii(v_t value) {
         if (str->length != 0) {
             return ((v_t)((v_number_t)(unsigned char)str->data[0] << 3) | TYPE_NUMBER);
         } else {
-            panic("Cannot convert string of length %d to ASCII", str->length);
+            return (v_t) 0;
         }
     } else {
         panic("Cannot convert type %s to ASCII", v_type(value));
@@ -189,7 +127,7 @@ static inline v_t vm_prime(v_t value) {
     if (V_IS_STRING(value)) {
         v_string_t str = (v_string_t)(value & VALUE_MASK);
         if (str->length == 0) {
-            panic("Cannot get the first element of an empty string");
+            return v_create_string("", 0);
         }
 
         char prime[2] = { str->data[0], '\0' };
@@ -240,7 +178,15 @@ static inline v_t vm_length(v_t value) {
         v_list_t list = (v_list_t)(value & VALUE_MASK);
         return (v_t) (list->length << 3);
     } else {
-        panic("Cannot get length of type %s", v_type(value));
+        v_list_t list = (v_list_t) (v_coerce_to_list(value) & VALUE_MASK);
+        v_t length = (v_t) (list->length << 3);
+
+        if (!V_IS_LIST(value)) {
+            free(list->items);
+            free(list);
+        }
+
+        return length;
     }
 }
 
@@ -316,11 +262,11 @@ static inline v_t vm_mul(v_t left, v_t right) {
         return (v_t) ((l * r) << 3 | TYPE_NUMBER);
     } else if (V_IS_STRING(left)) {
         v_string_t str = (v_string_t) (left & VALUE_MASK);
-        size_t length = str->length * ((v_number_t)(coerced >> 3));
+        size_t length = str->length * ((v_number_t)(coerced) >> 3);
         char* buffer = malloc(length + 1);
         if (!buffer) panic("Failed to allocate memory for string multiplication");
 
-        if (length < 0) {
+        if (((v_number_t)(coerced) >> 3) < 0) {
             panic("Cannot multiply string by negative number");
         }
 
@@ -384,6 +330,10 @@ static inline v_t vm_mod(v_t left, v_t right) {
         v_number_t l = (v_number_t) left >> 3;
         v_number_t r = (v_number_t) right >> 3;
         if (r == 0) panic("Division by zero");
+        if (l < 0 || r < 0) {
+            panic("Cannot perform modulo operation with negative numbers");
+        }
+
         return (v_t) ((l % r) << 3 | TYPE_NUMBER);
     }
 
@@ -392,6 +342,10 @@ static inline v_t vm_mod(v_t left, v_t right) {
         v_number_t l = (v_number_t) left >> 3;
         v_number_t r = (v_number_t) coerced >> 3;
         if (r == 0) panic("Division by zero");
+        if (l < 0 || r < 0) {
+            panic("Cannot perform modulo operation with negative numbers");
+        }
+
         return (v_t) ((l % r) << 3 | TYPE_NUMBER);
     }
 
@@ -578,6 +532,10 @@ static inline v_t vm_get(v_t value, v_t index, v_t range) {
         v_number_t idx = (v_number_t) coerced_index >> 3;
         v_number_t len = (v_number_t) coerced_range >> 3;
 
+        if (idx == 0 && len == 0) {
+            return v_create_list(0);
+        }
+
         if (idx < 0 || idx >= list->length || idx + len > list->length) {
             panic("Index %lld with range %lld out of bounds for list of length %d", idx, len, list->length);
         }
@@ -597,6 +555,10 @@ static inline v_t vm_get(v_t value, v_t index, v_t range) {
         v_string_t str = (v_string_t) (value & VALUE_MASK);
         v_number_t idx = (v_number_t) coerced_index >> 3;
         v_number_t len = (v_number_t) coerced_range >> 3;
+
+        if (idx == 0 && len == 0) {
+            return v_create_string("", 0);
+        }
 
         if (idx < 0 || idx >= str->length || idx + len > str->length) {
             panic("Index %lld with range %lld out of bounds for string of length %d", (int64_t) idx, (int64_t) len, str->length);
@@ -660,7 +622,7 @@ static inline v_t vm_set(v_t value, v_t index, v_t range, v_t replace) {
         v_string_t str = (v_string_t) (value & VALUE_MASK);
         v_string_t substr = (v_string_t) (v_coerce_to_string(replace) & VALUE_MASK);
 
-        if (idx < 0 || idx >= str->length || idx + len > str->length) {
+        if (idx < 0 || idx > str->length || idx + len > str->length || len < 0) {
             panic("Index %lld with range %lld out of bounds for string of length %d", idx, len, str->length);
         }
 
@@ -668,9 +630,15 @@ static inline v_t vm_set(v_t value, v_t index, v_t range, v_t replace) {
         char* new_data = malloc(new_length + 1);
         if (!new_data) panic("Failed to allocate memory for modified string");
 
-        memcpy(new_data, str->data, idx);
-        memcpy(new_data + idx, substr->data, substr->length);
-        memcpy(new_data + idx + substr->length, str->data + idx + len, str->length - idx - len);
+        // Copy up to idx
+        if (idx > 0)
+            memcpy(new_data, str->data, idx);
+        // Insert replacement
+        if (substr->length > 0)
+            memcpy(new_data + idx, substr->data, substr->length);
+        // Copy the rest after idx+len
+        if (str->length > idx + len)
+            memcpy(new_data + idx + substr->length, str->data + idx + len, str->length - idx - len);
         new_data[new_length] = '\0';
 
         v_t alt = v_create_string(new_data, new_length);
@@ -683,17 +651,33 @@ static inline v_t vm_set(v_t value, v_t index, v_t range, v_t replace) {
 
 static inline void vm_dump(v_t value) {
     if (V_IS_LIST(value)) {
-        printf("[");
         v_list_t list = (v_list_t)(value & VALUE_MASK);
+
+        printf("[");
         for (int i = 0; i < list->length; ++i) {
-            if (i > 0) printf(", ");
+            if (i > 0) printf(",");
+            if (V_IS_STRING(list->items[i])) {
+                printf("'");
+            }
+
             vm_dump(list->items[i]);
+
+            if (V_IS_STRING(list->items[i])) {
+                printf("'");
+            }
         }
-        printf("]\n");
+        printf("]");
+    } else if (V_IS_NULL(value)) {
+        printf("null");
     } else {
         v_t string = v_coerce_to_string(value);
         v_string_t str = (v_string_t) (string & VALUE_MASK);
-        printf("%s", str->data);
+        
+        if (V_IS_NULL(value)) {
+            printf("null");
+        } else {
+            printf("%s", str->data);
+        }
     }
 }
 
@@ -715,31 +699,12 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
     stack->size = 0;
     stack->capacity = 16;
 
-    register_pool_t reg_pool;
-    register_pool_init(&reg_pool, function->next_value_id, arena);
-
     v_t* registers = vm->registers;
     v_t* variables = vm->variables;
     ir_block_t* block = vm->block;
     ir_block_t* previous = NULL;
 
     int index = 0;
-
-    static load_reg_list_t load_regs;
-    static int load_regs_initialized = 0;
-    if (!load_regs_initialized) {
-        load_reg_list_init(&load_regs);
-        for (int b = 0; b < function->block_count; ++b) {
-            ir_block_t* blk = function->blocks[b];
-            for (int i = 0; i < blk->instruction_count; ++i) {
-                ir_instruction_t* instr = &blk->instructions[i];
-                if (instr->op == IR_LOAD) {
-                    load_reg_list_add(&load_regs, instr->result);
-                }
-            }
-        }
-        load_regs_initialized = 1;
-    }
 
     while (block->instruction_count > index) {
         ir_instruction_t* instruction = &block->instructions[index++];
@@ -770,7 +735,8 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
                 registers[result] = (v_t) instruction->block.function | TYPE_BLOCK;
                 break;
             case IR_CALL:
-                block = vm_call(block, previous, index, result, registers[instruction->generic.operands[0]], stack, arena, &registers, &reg_pool, &load_regs);
+                block = vm_call(block, previous, index, result, registers[instruction->generic.operands[0]], stack, arena, &registers, vm);
+                registers = vm->registers;
                 index = 0;
                 break;
             case IR_RETURN:
@@ -781,7 +747,7 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
                 v_t* pool = registers;
                 registers = item->registers;
                 registers[item->result] = pool[instruction->generic.operands[0]];
-                register_pool_release(&reg_pool, pool);
+                free(pool);
                 break;
             case IR_NOT:
                 registers[result] = v_coerce_to_boolean(registers[instruction->generic.operands[0]]) ^ (1 << 3);
