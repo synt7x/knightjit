@@ -24,7 +24,7 @@ static inline ir_instruction_t* ir_first_use(ir_function_t* function, ir_id_t re
             switch (instr->op) {
                 case IR_ADD: case IR_SUB: case IR_MUL: case IR_DIV:
                 case IR_MOD: case IR_POW: case IR_GT: case IR_LT: case IR_EQ:
-                case IR_AND: case IR_OR: case IR_NOT:
+                case IR_AND: case IR_OR: case IR_NOT: case IR_NEG:
                 case IR_LENGTH: case IR_BOX: case IR_ASCII:
                 case IR_PRIME: case IR_ULTIMATE:
                 case IR_GET: case IR_SET:

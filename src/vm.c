@@ -121,6 +121,8 @@ static inline void vm_dump(v_t value) {
         printf("]");
     } else if (V_IS_NULL(value)) {
         printf("null");
+    } else if (V_IS_BLOCK(value)) {
+        printf("BLOCK (0x%llx)", (unsigned long long)(value & VALUE_MASK));
     } else {
         v_t string = v_coerce_to_string(value);
         v_string_t str = (v_string_t) (string & VALUE_MASK);

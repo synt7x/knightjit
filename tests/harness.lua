@@ -131,7 +131,7 @@ function test.refute(code, stdin)
 	code = code:gsub('"', '\\"')
 	local echo = stdin and 'echo "' .. stdin .. '" |' or ""
 
-	local handle = io.popen(echo .. test_harness.executable .. ' -e "' .. code .. '" 2>' .. null(), "r")
+	local handle = io.popen(echo .. test_harness.executable .. ' -e "D ' .. code .. '" 2>' .. null(), "r")
 	local stdout = handle:read("*a")
 	local _, _, exit = handle:close()
 	local pass = exit ~= 0
@@ -155,7 +155,7 @@ function test.must(code, stdin)
 	code = code:gsub('"', '\\"')
 	local echo = stdin and 'echo "' .. stdin .. '" |' or ""
 
-	local handle = io.popen(echo .. test_harness.executable .. ' -e "' .. code .. '"', "r")
+	local handle = io.popen(echo .. test_harness.executable .. ' -e "D ' .. code .. '"', "r")
 	local stdout = handle:read("*a")
 	local _, _, exit = handle:close()
 	local pass = exit == 0

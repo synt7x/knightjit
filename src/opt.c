@@ -50,8 +50,8 @@ void ir_fold(ir_function_t* function) {
                     case IR_LENGTH: result = vm_length(value); break;
                     case IR_BOX:    result = vm_box(value); break;
                     case IR_ASCII:  result = vm_ascii(value); break;
-                    case IR_NOT:    result = v_coerce_to_boolean(value) ^ (1 << 3);
-                    case IR_NEG:    result = ((v_number_t) v_coerce_to_number(value)) * -1;
+                    case IR_NOT:    result = v_coerce_to_boolean(value) ^ (1 << 3); break;
+                    case IR_NEG:    result = ((v_number_t) v_coerce_to_number(value)) * -1; break;
                     case IR_PRIME:  result = vm_prime(value); break;
                     case IR_ULTIMATE: result = vm_ultimate(value); break;
                     default: continue;
@@ -82,10 +82,10 @@ void ir_drop(ir_function_t* function) {
     for (int b = 0; b < function->block_count; b++) {
         ir_block_t* block = function->blocks[b];
 
-        int out = 0;
+        int count = 0;
         for (int i = 0; i < block->instruction_count; i++) {
             ir_instruction_t* instr = &block->instructions[i];
-            bool essential =
+            int preserve =
                 instr->op == IR_OUTPUT ||
                 instr->op == IR_DUMP   ||
                 instr->op == IR_STORE  ||
@@ -94,13 +94,12 @@ void ir_drop(ir_function_t* function) {
                 instr->op == IR_JUMP   ||
                 instr->op == IR_CALL   ||
                 instr->op == IR_QUIT;
-            if (ir_first_use(function, instr->result) || essential) {
-                if (out != i) block->instructions[out] = block->instructions[i];
-                out++;
+            if (ir_first_use(function, instr->result) || preserve) {
+                if (count != i) block->instructions[count] = block->instructions[i];
+                count++;
             }
-            // else: drop the instruction
         }
-        block->instruction_count = out;
+        block->instruction_count = count;
     }
 }
 
