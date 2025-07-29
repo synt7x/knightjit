@@ -64,9 +64,7 @@ int main(int argc, char* argv[]) {
     #ifndef JIT_OFF
     if ((config.flags & CONFIG_JIT) == 0) {
     #endif
-
-        vm_t* vm = vm_run(ir, arena);
-
+        vm_run(ir, arena);
     #ifndef JIT_OFF
     }
     #endif

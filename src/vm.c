@@ -417,7 +417,7 @@ static inline v_t vm_pow(v_t left, v_t right) {
             return v_create_string("", 0);
         }
         size_t total_length = 0;
-        for (int i = 0; i < list->length; ++i) {
+        for (size_t i = 0; i < list->length; ++i) {
             v_t elem = list->items[i];
             v_string_t elem_str = (v_string_t)(v_coerce_to_string(elem) & VALUE_MASK);
             total_length += elem_str->length;
@@ -428,7 +428,7 @@ static inline v_t vm_pow(v_t left, v_t right) {
         char* buffer = malloc(total_length + 1);
         if (!buffer) panic("Failed to allocate memory for join result");
         size_t offset = 0;
-        for (int i = 0; i < list->length; ++i) {
+        for (size_t i = 0; i < list->length; ++i) {
             v_t elem = list->items[i];
             v_string_t elem_str = (v_string_t)(v_coerce_to_string(elem) & VALUE_MASK);
             memcpy(buffer + offset, elem_str->data, elem_str->length);
@@ -505,7 +505,7 @@ static inline v_t vm_eq(v_t left, v_t right) {
 
         if (l->length != r->length) return (v_t) TYPE_BOOLEAN;
 
-        for (int i = 0; i < l->length; ++i) {
+        for (size_t i = 0; i < l->length; ++i) {
             if (!vm_eq(l->items[i], r->items[i])) {
                 return (v_t) TYPE_BOOLEAN;
             }
@@ -536,7 +536,7 @@ static inline v_t vm_get(v_t value, v_t index, v_t range) {
             return v_create_list(0);
         }
 
-        if (idx < 0 || idx >= list->length || idx + len > list->length) {
+        if (idx < 0 || (size_t) idx >= list->length || (size_t) idx + (size_t) len > list->length) {
             panic("Index %lld with range %lld out of bounds for list of length %d", idx, len, list->length);
         }
 
@@ -560,7 +560,7 @@ static inline v_t vm_get(v_t value, v_t index, v_t range) {
             return v_create_string("", 0);
         }
 
-        if (idx < 0 || idx >= str->length || idx + len > str->length) {
+        if (idx < 0 || (size_t) idx >= str->length || (size_t) idx + (size_t) len > str->length) {
             panic("Index %lld with range %lld out of bounds for string of length %d", (int64_t) idx, (int64_t) len, str->length);
         }
 
@@ -597,22 +597,22 @@ static inline v_t vm_set(v_t value, v_t index, v_t range, v_t replace) {
         v_list_t list = (v_list_t) (value & VALUE_MASK);
         v_list_t replace_list = (v_list_t) (v_coerce_to_list(replace) & VALUE_MASK);
 
-        if (idx < 0 || idx > list->length) {
+        if (idx < 0 || (size_t) idx > list->length) {
             panic("Index %lld with range %lld out of bounds for list of length %d", idx, len, list->length);
         }
 
         v_list_t alt = (v_list_t) (v_create_list(list->length - len + replace_list->length) & VALUE_MASK);
-        int pos = 0;
+        size_t pos = 0;
 
-        for (int i = 0; i < idx; ++i) {
+        for (size_t i = 0; i < (size_t) idx; ++i) {
             alt->items[pos++] = list->items[i];
         }
 
-        for (int i = 0; i < replace_list->length; ++i) {
+        for (size_t i = 0; i < replace_list->length; ++i) {
             alt->items[pos++] = replace_list->items[i];
         }
 
-        for (int i = idx + len; i < list->length; ++i) {
+        for (size_t i = idx + len; i < list->length; ++i) {
             alt->items[pos++] = list->items[i];
         }
 
@@ -622,7 +622,7 @@ static inline v_t vm_set(v_t value, v_t index, v_t range, v_t replace) {
         v_string_t str = (v_string_t) (value & VALUE_MASK);
         v_string_t substr = (v_string_t) (v_coerce_to_string(replace) & VALUE_MASK);
 
-        if (idx < 0 || idx > str->length || idx + len > str->length || len < 0) {
+        if (idx < 0 || (size_t) idx > str->length || (size_t) idx + (size_t) len > str->length || len < 0) {
             panic("Index %lld with range %lld out of bounds for string of length %d", idx, len, str->length);
         }
 
@@ -630,15 +630,9 @@ static inline v_t vm_set(v_t value, v_t index, v_t range, v_t replace) {
         char* new_data = malloc(new_length + 1);
         if (!new_data) panic("Failed to allocate memory for modified string");
 
-        // Copy up to idx
-        if (idx > 0)
-            memcpy(new_data, str->data, idx);
-        // Insert replacement
-        if (substr->length > 0)
-            memcpy(new_data + idx, substr->data, substr->length);
-        // Copy the rest after idx+len
-        if (str->length > idx + len)
-            memcpy(new_data + idx + substr->length, str->data + idx + len, str->length - idx - len);
+        if (idx > 0) memcpy(new_data, str->data, idx);
+        if (substr->length > 0) memcpy(new_data + idx, substr->data, substr->length);
+        if (str->length > (size_t) idx + (size_t) len) memcpy(new_data + idx + substr->length, str->data + idx + len, str->length - idx - len);
         new_data[new_length] = '\0';
 
         v_t alt = v_create_string(new_data, new_length);
@@ -654,7 +648,7 @@ static inline void vm_dump(v_t value) {
         v_list_t list = (v_list_t)(value & VALUE_MASK);
 
         printf("[");
-        for (int i = 0; i < list->length; ++i) {
+        for (size_t i = 0; i < list->length; ++i) {
             if (i > 0) printf(",");
             if (V_IS_STRING(list->items[i])) {
                 printf("'");
