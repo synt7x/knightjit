@@ -87,7 +87,7 @@ deps:
 
 ifeq ($(NEED_LUA),1)
 	@echo ==== Building minilua ====
-	$(CC) -o $(LUA) $(CFLAGS) $(LUAJIT)/src/host/minilua.c
+	$(CC) -o $(LUA) $(CFLAGS) $(LUAJIT)/src/host/minilua.c -lm
 endif
 
 rebuild:
