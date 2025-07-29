@@ -2,7 +2,8 @@
 #define MAP_H
 
 #include <stdint.h>
-// Hashmap using murmur3 hash function
+#include <stddef.h>
+
 typedef const char* map_key_t;
 typedef uintptr_t map_value_t;
 typedef uint64_t map_hash_t;

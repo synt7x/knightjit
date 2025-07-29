@@ -10,8 +10,8 @@ CFLAGS += -finline-functions -fno-stack-protector
 CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
 CFLAGS += -DJIT_OFF
 
-GIT := git
-LUA := luajit
+GIT ?= git
+LUA ?= luajit
 
 ifeq ($(OS),Windows_NT)
 	RM := rd /s /q
@@ -50,7 +50,7 @@ SRC := src
 TESTS := tests
 JIT := $(SRC)/jit
 
-ifeq (, $(shell where $(LUA)))
+ifeq (, $(shell $(WHICH) $(LUA)))
 LUA := $(LUAJIT)/minilua-$(EXECUTABLE)
 NEED_LUA := 1
 endif
