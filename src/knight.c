@@ -26,7 +26,12 @@ int main(int argc, char* argv[]) {
         config.flags,
         config.flags & CONFIG_VERBOSE ? "VERBOSE " : "",
         config.flags & CONFIG_FILE ? "FILE " : "INLINE ",
+        
+        #ifdef JIT_OFF
+        "JIT-OFF"
+        #else
         config.flags & CONFIG_JIT ? "JIT" : "JIT-OFF"
+        #endif
     );
 
     lexer_t lexer;
@@ -57,7 +62,7 @@ int main(int argc, char* argv[]) {
     map_t* symbol_table = map_create(8);
 
     arena_t* arena = arena_create(512);
-    ir_function_t* ir = ir_create(tree, arena, symbol_table);
+    ir_function_t* ir = ir_create(tree, arena, symbol_table, &config);
     ir_optimize(ir);
 
     arena_free(ast_arena);

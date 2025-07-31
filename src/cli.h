@@ -11,6 +11,9 @@ typedef enum flags {
 typedef struct cli_config {
     flags_t flags;
     char* input;
+
+    char** args;
+    int argc;
 } cli_config_t;
 
 cli_config_t cli_parse(int argc, char* argv[]);

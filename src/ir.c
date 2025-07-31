@@ -812,7 +812,7 @@ ir_id_t ir_generate_ssa(ast_node_t* root, ir_function_t* function, ir_block_t* e
     return root->result;
 }
 
-ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table) {
+ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table, cli_config_t* config) {
     ir_function_t* function = arena_alloc(arena, sizeof(ir_function_t));
     function->blocks = arena_alloc(arena, sizeof(ir_block_t*) * 8);
     function->block_count = 0;
@@ -827,6 +827,25 @@ ir_function_t* ir_create(ast_node_t* tree, arena_t* arena, map_t* symbol_table) 
 
     ir_block_t* entry_block = ir_create_block(function);
     function->block = entry_block;
+
+    #ifndef STANDARD
+    ir_instruction_t* args_list = ir_emit(IR_CONST_ARRAY, function, entry_block);
+    ir_instruction_t* args = ir_emit(IR_STORE, function, entry_block);
+    map_set(symbol_table, "_", 1, ++function->var_id);
+
+    args->var.var_id = function->var_id;
+
+    args_list->constant.value = v_create_list(config->argc);
+    v_list_t arg = (v_list_t) (args_list->constant.value & VALUE_MASK);
+
+    for (int i = 0; i < config->argc; ++i) {
+        arg->items[i] = v_create_string(config->args[i], strlen(config->args[i]));
+    }
+
+    arg->length = config->argc;
+    args->var.value = args_list->result;
+    #endif
+
     ir_generate_ssa(tree, function, entry_block);
 
     return function;

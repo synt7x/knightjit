@@ -42,9 +42,13 @@ cli_config_t cli_parse(int argc, char* argv[]) {
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             cli_help();
             exit(0);
-        } else {
+        } else if (!config.input) {
             config.flags |= CONFIG_FILE;
             config.input = argv[i];
+        } else {
+            config.args = argv + i;
+            config.argc = argc - i;
+            break;
         }
     }
 
