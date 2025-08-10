@@ -20,6 +20,29 @@ vm_t* vm_init(ir_function_t* function, arena_t* arena) {
     return vm;
 }
 
+void vm_constants(ir_function_t* function, v_t* registers) {
+    for (int b = 0; b < function->block_count; b++) {
+        ir_block_t* block = function->blocks[b];
+        for (int i = 0; i < block->instruction_count; i++) {
+            ir_instruction_t* instr = &block->instructions[i];
+            switch (instr->op) {
+                case IR_CONST_NUMBER:
+                case IR_CONST_STRING:
+                case IR_CONST_BOOLEAN:
+                case IR_CONST_NULL:
+                case IR_CONST_ARRAY:
+                    registers[instr->result] = instr->constant.value;
+                    break;
+                case IR_OUTPUT:
+                    registers[instr->result] = TYPE_NULL;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
+
 static inline v_t vm_prompt() {
     int capacity = 16;
     int length = 0;
@@ -160,6 +183,8 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
 
     int index = 0;
 
+    vm_constants(function, registers);
+
     while (block->instruction_count > index) {
         ir_instruction_t* instruction = &block->instructions[index++];
         ir_id_t result = instruction->result;
@@ -171,8 +196,7 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
             case IR_CONST_BOOLEAN:
             case IR_CONST_NULL:
             case IR_CONST_ARRAY:
-                registers[result] = instruction->constant.value;
-                break;
+                continue;
             case IR_LOAD:
                 registers[result] = variables[instruction->var.var_id];
                 break;

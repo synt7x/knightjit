@@ -215,5 +215,5 @@ void ir_optimize(ir_function_t* function) {
     ir_fold(function);
     ir_drop(function);
 
-    opt_liveness_t* liveness = ir_ranges(function);
+    // opt_liveness_t* liveness = ir_ranges(function);
 }
