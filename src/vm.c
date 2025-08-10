@@ -29,16 +29,16 @@ void vm_constants(ir_function_t* function, v_t* registers) {
             ir_id_t result = instruction->result;
             ir_op_t op = instruction->op;
 
-            switch (instruction->op) {
+            switch (op) {
                 case IR_CONST_NUMBER:
                 case IR_CONST_STRING:
                 case IR_CONST_BOOLEAN:
                 case IR_CONST_NULL:
                 case IR_CONST_ARRAY:
-                    registers[instruction->result] = instruction->constant.value;
+                    registers[result] = instruction->constant.value;
                     break;
                 case IR_OUTPUT:
-                    registers[instruction->result] = TYPE_NULL;
+                    registers[result] = TYPE_NULL;
                     break;
                 default:
                     break;
@@ -314,6 +314,7 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
                 registers[result] = vm_phi(previous, instruction->phi.phi_values, instruction->phi.phi_blocks, instruction->phi.phi_count, registers);
                 break;
             case IR_SAVE:
+                break;
             case IR_RESTORE:
                 break;
             default: panic("unimplemented");
