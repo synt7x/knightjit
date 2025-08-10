@@ -93,7 +93,9 @@ void ir_drop(ir_function_t* function) {
                 instr->op == IR_BRANCH ||
                 instr->op == IR_JUMP   ||
                 instr->op == IR_CALL   ||
-                instr->op == IR_QUIT;
+                instr->op == IR_QUIT   ||
+                instr->op == IR_SAVE   ||
+                instr->op == IR_RESTORE;
             if (ir_first_use(function, instr->result) || preserve) {
                 if (count != i) block->instructions[count] = block->instructions[i];
                 count++;
@@ -137,65 +139,40 @@ opt_liveness_t* ir_ranges(ir_function_t* function) {
                     for (int j = 0; j < instr->generic.operand_count; j++) {
                         ir_id_t operand = instr->generic.operands[j];
                         if (operand < n) {
-                            if (tracked[operand].end == -1) {
+                            if (tracked[operand].end < i) {
                                 tracked[operand].end = i;
                             }
-                            if (tracked[operand].use_count >= tracked[operand].use_capacity) {
-                                tracked[operand].use_capacity = tracked[operand].use_capacity ? tracked[operand].use_capacity * 2 : 4;
-                                tracked[operand].uses = realloc(tracked[operand].uses, sizeof(int) * tracked[operand].use_capacity);
-                            }
-                            tracked[operand].uses[tracked[operand].use_count++] = i;
                         }
                     }
                     break;
                 case IR_STORE:
                     if (instr->var.value < n) {
-                        if (tracked[instr->var.value].end == -1) {
+                        if (tracked[instr->var.value].end < i) {
                             tracked[instr->var.value].end = i;
                         }
-                        if (tracked[instr->var.value].use_count >= tracked[instr->var.value].use_capacity) {
-                            tracked[instr->var.value].use_capacity = tracked[instr->var.value].use_capacity ? tracked[instr->var.value].use_capacity * 2 : 4;
-                            tracked[instr->var.value].uses = realloc(tracked[instr->var.value].uses, sizeof(int) * tracked[instr->var.value].use_capacity);
-                        }
-                        tracked[instr->var.value].uses[tracked[instr->var.value].use_count++] = i;
                     }
                     break;
                 case IR_BRANCH:
                     if (instr->branch.condition < n) {
-                        if (tracked[instr->branch.condition].end == -1) {
+                        if (tracked[instr->branch.condition].end < i) {
                             tracked[instr->branch.condition].end = i;
                         }
-                        if (tracked[instr->branch.condition].use_count >= tracked[instr->branch.condition].use_capacity) {
-                            tracked[instr->branch.condition].use_capacity = tracked[instr->branch.condition].use_capacity ? tracked[instr->branch.condition].use_capacity * 2 : 4;
-                            tracked[instr->branch.condition].uses = realloc(tracked[instr->branch.condition].uses, sizeof(int) * tracked[instr->branch.condition].use_capacity);
-                        }
-                        tracked[instr->branch.condition].uses[tracked[instr->branch.condition].use_count++] = i;
                     }
                     break;
                 case IR_RETURN:
                     if (instr->generic.operand_count > 0 && instr->generic.operands[0] < n) {
-                        if (tracked[instr->generic.operands[0]].end == -1) {
+                        if (tracked[instr->generic.operands[0]].end < i) {
                             tracked[instr->generic.operands[0]].end = i;
                         }
-                        if (tracked[instr->generic.operands[0]].use_count >= tracked[instr->generic.operands[0]].use_capacity) {
-                            tracked[instr->generic.operands[0]].use_capacity = tracked[instr->generic.operands[0]].use_capacity ? tracked[instr->generic.operands[0]].use_capacity * 2 : 4;
-                            tracked[instr->generic.operands[0]].uses = realloc(tracked[instr->generic.operands[0]].uses, sizeof(int) * tracked[instr->generic.operands[0]].use_capacity);
-                        }
-                        tracked[instr->generic.operands[0]].uses[tracked[instr->generic.operands[0]].use_count++] = i;
                     }
                     break;
                 case IR_PHI:
                     for (int j = 0; j < instr->phi.phi_count; j++) {
                         ir_id_t phi_value = instr->phi.phi_values[j];
                         if (phi_value < n) {
-                            if (tracked[phi_value].end == -1) {
+                            if (tracked[phi_value].end < -1) {
                                 tracked[phi_value].end = i;
                             }
-                            if (tracked[phi_value].use_count >= tracked[phi_value].use_capacity) {
-                                tracked[phi_value].use_capacity = tracked[phi_value].use_capacity ? tracked[phi_value].use_capacity * 2 : 4;
-                                tracked[phi_value].uses = realloc(tracked[phi_value].uses, sizeof(int) * tracked[phi_value].use_capacity);
-                            }
-                            tracked[phi_value].uses[tracked[phi_value].use_count++] = i;
                         }
                     }
                     break;
@@ -215,6 +192,52 @@ void ir_preserve(ir_function_t* function, opt_liveness_t* tracked) {
         for (int i = 0; i < block->instruction_count; i++) {
             ir_instruction_t* instr = &block->instructions[i];
             
+            if (instr->op == IR_CALL) {
+                ir_instruction_t* save = &block->instructions[i - 1];
+                ir_instruction_t* restore = &block->instructions[i + 1];
+
+                save->generic.operand_count = 0;
+                restore->generic.operand_count = 0;
+
+                for (int j = 0; j < i; j++) {
+                    ir_instruction_t* pre = &block->instructions[j];
+                    if (ir_is_constant(pre)) continue;
+                    opt_liveness_t lifetime = tracked[pre->result];
+
+                    if (lifetime.end > i && lifetime.start >= 0) {
+                        if (!save->generic.operand_count) {
+                            save->generic.operands = arena_alloc(function->arena, sizeof(ir_id_t));
+                            restore->generic.operands = arena_alloc(function->arena, sizeof(ir_id_t));
+
+                            save->generic.operands[0] = pre->result;
+                            restore->generic.operands[0] = pre->result;
+                        } else {
+                            save->generic.operands = arena_realloc(function->arena, save->generic.operands, sizeof(ir_id_t) * save->generic.operand_count + 1);
+                            restore->generic.operands = arena_realloc(function->arena, restore->generic.operands, sizeof(ir_id_t) * restore->generic.operand_count + 1);
+                        
+                            save->generic.operands[save->generic.operand_count] = pre->result;
+                            restore->generic.operands[restore->generic.operand_count] = pre->result;
+                        }
+
+                        save->generic.operand_count++;
+                        restore->generic.operand_count++;
+                    }
+                }
+
+                if (!save->generic.operand_count) {
+                    for (int k = i; k < block->instruction_count; k++) {
+                        if (k == i - 1 || k == i + 1) continue;
+                        int target = k > i + 1 ? k - 2 : k - 1;
+                        block->instructions[target] = block->instructions[k];
+
+                        free(tracked);
+                        tracked = ir_ranges(function);
+                    }
+
+                    block->instruction_count -= 2;
+                    i -= 1;
+                }
+            }
         }
     }
 }
@@ -223,7 +246,8 @@ void ir_optimize(ir_function_t* function) {
     ir_fold(function);
     ir_drop(function);
 
-    // opt_liveness_t* liveness = ir_ranges(function);
-    // ir_preserve(function, liveness);
-    // free(liveness);
+    opt_liveness_t* liveness = ir_ranges(function);
+
+    ir_preserve(function, liveness);
+    free(liveness);
 }

@@ -47,6 +47,8 @@ const char* debug_ir_op_string(ir_op_t op) {
         case IR_LENGTH: return "LENGTH";
         case IR_GET: return "GET";
         case IR_SET: return "SET";
+        case IR_SAVE: return "SAVE";
+        case IR_RESTORE: return "RESTORE";
         default: panic("Unknown IR operation");
     }
 };
@@ -316,11 +318,14 @@ ir_id_t ir_generate_ssa(ast_node_t* root, ir_function_t* function, ir_block_t* e
                     ir_worklist_add(worklist, node, block, 1);
                     ir_worklist_add(worklist, node->arg1, block, 0);
                 } else {
+                    ir_emit(IR_SAVE, function, block);
                     instr = ir_emit(IR_CALL, function, block);
+
                     instr->generic.operand_count = 1;
                     instr->generic.operands = arena_alloc(function->arena, sizeof(ir_id_t));
                     node->result = instr->result;
                     instr->generic.operands[0] = node->arg1->result;
+                    ir_emit(IR_RESTORE, function, block);
                 }
                 break;
             case AST_QUIT:
