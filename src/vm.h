@@ -13,7 +13,7 @@ typedef struct vm_stack_item {
 } vm_stack_item_t;
 
 typedef struct vm_stack {
-    vm_stack_item_t* items;
+    v_t* items;
     int size;
     int capacity;
 } vm_stack_t;
@@ -27,6 +27,24 @@ typedef struct vm {
 
     int index;
 } vm_t;
+
+static inline void vm_push(vm_stack_t* stack, v_t value) {
+    if (stack->size >= stack->capacity) {
+        stack->capacity = stack->capacity ? stack->capacity * 2 : 4096;
+        stack->items = realloc(stack->items, sizeof(v_t) * stack->capacity);
+        if (!stack->items) panic("Failed to reallocate memory for VM stack items");
+    }
+
+    stack->items[stack->size++] = value;
+}
+
+static inline v_t vm_pop(vm_stack_t* stack) {
+    if (stack->size == 0) {
+        panic("FATAL: Please report this as a bug!");
+    }
+
+    return stack->items[--stack->size];
+}
 
 static inline v_t vm_ascii(v_t value) {
     if (V_IS_NUMBER(value) && value >> 3 < 0xFF) {

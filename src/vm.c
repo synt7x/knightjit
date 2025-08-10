@@ -85,46 +85,18 @@ static inline v_t vm_prompt() {
 }
 
 static inline ir_block_t* vm_call(
-    ir_block_t* origin, ir_block_t* previous, int index, ir_id_t result, v_t block,
-    vm_stack_t* stack, arena_t* arena, v_t** registers_ptr, vm_t* vm
+    ir_block_t* origin, ir_block_t* previous, int index, ir_id_t result, v_t block, vm_stack_t* stack
 ) {
     ir_block_t* target = (ir_block_t*) (block & VALUE_MASK);
     if (!V_IS_BLOCK(block)) panic("Expected a block type for call, got %s", v_type(block));
     if (!target) panic("Unknown block type in call");
 
-    if (stack->size >= stack->capacity) {
-        stack->capacity = stack->capacity ? stack->capacity * 2 : 8;
-        stack->items = arena_realloc(arena, stack->items, sizeof(vm_stack_item_t) * stack->capacity);
-        if (!stack->items) panic("Failed to reallocate memory for VM stack items");
-    }
-
-    vm_stack_item_t* item;
-    if (stack->size < stack->capacity && stack->items) {
-        item = &stack->items[stack->size];
-    } else {
-        item = arena_alloc(arena, sizeof(vm_stack_item_t));
-    }
-
-    if (!item) panic("Failed to allocate memory for VM stack item");
-    item->callee = origin;
-    item->index = index;
-    item->result = result;
-    item->previous = previous;
-    item->registers = *registers_ptr;
-
-    stack->items[stack->size++] = *item;
-    vm->registers = malloc(sizeof(v_t) * vm->function->next_value_id);
-    vm_constants(vm->function, vm->registers);
+    vm_push(stack, (v_t) result);
+    vm_push(stack, (v_t) origin);
+    vm_push(stack, (v_t) previous);
+    vm_push(stack, (v_t) index);
 
     return target;
-}
-
-static inline vm_stack_item_t* vm_return(vm_stack_t* stack) {
-    if (stack->size == 0) {
-        panic("Attempted to return from a non-BLOCK");
-    }
-
-    return &stack->items[--stack->size];
 }
 
 static inline void vm_dump(v_t value) {
@@ -175,9 +147,9 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
     vm_t* vm = vm_init(function, arena);
 
     vm_stack_t* stack = arena_alloc(arena, sizeof(vm_stack_t));
-    stack->items = arena_alloc(arena, sizeof(vm_stack_item_t) * 16);
+    stack->items = malloc(sizeof(v_t) * 4096);
     stack->size = 0;
-    stack->capacity = 16;
+    stack->capacity = 4096;
 
     v_t* registers = vm->registers;
     v_t* variables = vm->variables;
@@ -199,7 +171,7 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
             case IR_CONST_BOOLEAN:
             case IR_CONST_NULL:
             case IR_CONST_ARRAY:
-                break;
+                continue;
             case IR_LOAD:
                 registers[result] = variables[instruction->var.var_id];
                 break;
@@ -216,19 +188,14 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
                 registers[result] = (v_t) instruction->block.function | TYPE_BLOCK;
                 break;
             case IR_CALL:
-                block = vm_call(block, previous, index, result, registers[instruction->generic.operands[0]], stack, arena, &registers, vm);
-                registers = vm->registers;
+                block = vm_call(block, previous, index, result, registers[instruction->generic.operands[0]], stack);
                 index = 0;
                 break;
             case IR_RETURN:
-                vm_stack_item_t* item = vm_return(stack);
-                previous = item->previous;
-                block = item->callee;
-                index = item->index;
-                v_t* pool = registers;
-                registers = item->registers;
-                registers[item->result] = pool[instruction->generic.operands[0]];
-                free(pool);
+                index = vm_pop(stack);
+                previous = (ir_block_t*) vm_pop(stack);
+                block = (ir_block_t*) vm_pop(stack);
+                registers[vm_pop(stack)] = registers[instruction->generic.operands[0]];
                 break;
             case IR_NOT:
                 registers[result] = v_coerce_to_boolean(registers[instruction->generic.operands[0]]) ^ (1 << 3);
@@ -314,10 +281,18 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
                 registers[result] = vm_phi(previous, instruction->phi.phi_values, instruction->phi.phi_blocks, instruction->phi.phi_count, registers);
                 break;
             case IR_SAVE:
+                for (int j = 0; j < instruction->generic.operand_count; j++) {
+                    ir_id_t reg = instruction->generic.operands[j];
+                    vm_push(stack, registers[reg]);
+                }
                 break;
             case IR_RESTORE:
+                for (int j = instruction->generic.operand_count; j > 0; j--) {
+                    ir_id_t reg = instruction->generic.operands[j - 1];
+                    registers[reg] = vm_pop(stack);
+                }
                 break;
-            default: panic("unimplemented");
+            default: panic("Unknown IR operation %d", op);
         }
     }
 
