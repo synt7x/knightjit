@@ -23,18 +23,22 @@ vm_t* vm_init(ir_function_t* function, arena_t* arena) {
 void vm_constants(ir_function_t* function, v_t* registers) {
     for (int b = 0; b < function->block_count; b++) {
         ir_block_t* block = function->blocks[b];
+
         for (int i = 0; i < block->instruction_count; i++) {
-            ir_instruction_t* instr = &block->instructions[i];
-            switch (instr->op) {
+            ir_instruction_t* instruction = &block->instructions[i];
+            ir_id_t result = instruction->result;
+            ir_op_t op = instruction->op;
+
+            switch (instruction->op) {
                 case IR_CONST_NUMBER:
                 case IR_CONST_STRING:
                 case IR_CONST_BOOLEAN:
                 case IR_CONST_NULL:
                 case IR_CONST_ARRAY:
-                    registers[instr->result] = instr->constant.value;
+                    registers[instruction->result] = instruction->constant.value;
                     break;
                 case IR_OUTPUT:
-                    registers[instr->result] = TYPE_NULL;
+                    registers[instruction->result] = TYPE_NULL;
                     break;
                 default:
                     break;
@@ -110,8 +114,7 @@ static inline ir_block_t* vm_call(
 
     stack->items[stack->size++] = *item;
     vm->registers = malloc(sizeof(v_t) * vm->function->next_value_id);
-    memset(vm->registers, 0, sizeof(v_t) * vm->function->next_value_id);
-
+    vm_constants(vm->function, vm->registers);
 
     return target;
 }
@@ -196,7 +199,7 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
             case IR_CONST_BOOLEAN:
             case IR_CONST_NULL:
             case IR_CONST_ARRAY:
-                continue;
+                break;
             case IR_LOAD:
                 registers[result] = variables[instruction->var.var_id];
                 break;
