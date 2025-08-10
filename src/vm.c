@@ -313,6 +313,9 @@ vm_t* vm_run(ir_function_t* function, arena_t* arena) {
             case IR_PHI:
                 registers[result] = vm_phi(previous, instruction->phi.phi_values, instruction->phi.phi_blocks, instruction->phi.phi_count, registers);
                 break;
+            case IR_SAVE:
+            case IR_RESTORE:
+                break;
             default: panic("unimplemented");
         }
     }

@@ -21,18 +21,18 @@ typedef enum ir_type {
 } ir_type_t;
 
 typedef enum ir_op {
-    IR_CONST_NUMBER, // 0
-    IR_CONST_STRING, // 1
-    IR_CONST_BOOLEAN, // 2
-    IR_CONST_NULL, // 3
-    IR_CONST_ARRAY, // 4
+    IR_CONST_NUMBER,
+    IR_CONST_STRING,
+    IR_CONST_BOOLEAN,
+    IR_CONST_NULL,
+    IR_CONST_ARRAY,
 
-    IR_LOAD, // 5
-    IR_STORE, // 6
+    IR_LOAD,
+    IR_STORE,
 
-    IR_ADD, // 7
-    IR_SUB, // 8
-    IR_MUL, // 9
+    IR_ADD,
+    IR_SUB,
+    IR_MUL,
     IR_DIV,
     IR_MOD,
     IR_POW,
@@ -69,6 +69,9 @@ typedef enum ir_op {
 
     IR_PHI,
     IR_BLOCK,
+
+    IR_SAVE,
+    IR_RESTORE,
 } ir_op_t;
 
 typedef struct ir_block ir_block_t;
