@@ -7,10 +7,6 @@
 typedef struct opt_liveness {
     int start;
     int end;
-    
-    int* uses;
-    int use_count;
-    int use_capacity;
 
     ir_id_t id;
 } opt_liveness_t;

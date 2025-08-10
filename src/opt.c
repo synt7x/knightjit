@@ -113,9 +113,7 @@ opt_liveness_t* ir_ranges(ir_function_t* function) {
     for (int i = 0; i < n; i++) {
         tracked[i].start = -1;
         tracked[i].end = -1;
-        tracked[i].uses = NULL;
-        tracked[i].use_count = 0;
-        tracked[i].use_capacity = 0;
+
         tracked[i].id = i;
     }
 
@@ -185,7 +183,7 @@ opt_liveness_t* ir_ranges(ir_function_t* function) {
     return tracked;
 }
 
-void ir_preserve(ir_function_t* function, opt_liveness_t* tracked) {
+opt_liveness_t* ir_preserve(ir_function_t* function, opt_liveness_t* tracked) {
     for (int b = 0; b < function->block_count; b++) {
         ir_block_t* block = function->blocks[b];
 
@@ -240,14 +238,14 @@ void ir_preserve(ir_function_t* function, opt_liveness_t* tracked) {
             }
         }
     }
+
+    return tracked;
 }
 
 void ir_optimize(ir_function_t* function) {
     ir_fold(function);
     ir_drop(function);
 
-    opt_liveness_t* liveness = ir_ranges(function);
-
-    ir_preserve(function, liveness);
+    opt_liveness_t* liveness = ir_preserve(function, ir_ranges(function));
     free(liveness);
 }
