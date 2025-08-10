@@ -216,19 +216,4 @@ void ir_optimize(ir_function_t* function) {
     ir_drop(function);
 
     opt_liveness_t* liveness = ir_ranges(function);
-    for (int b = 0; b < function->block_count; b++) {
-        ir_block_t* block = function->blocks[b];
-        for (int i = 0; i < block->instruction_count; i++) {
-            ir_instruction_t* instr = &block->instructions[i];
-            int id = instr->result;
-            if (id < function->next_value_id) {
-                printf("Instruction id %d: start=%d, end=%d, uses=[", id, liveness[id].start, liveness[id].end);
-                for (int j = 0; j < liveness[id].use_count; j++) {
-                    printf("%d", liveness[id].uses[j]);
-                    if (j < liveness[id].use_count - 1) printf(", ");
-                }
-                printf("]\n");
-            }
-        }
-    }
 }
