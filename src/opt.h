@@ -4,6 +4,20 @@
 #include "ir.h"
 #include "vm.h"
 
+typedef struct opt_liveness {
+    int start;
+    int end;
+    int* uses;
+    int use_count;
+    int use_capacity;
+
+    int* defs;
+    int def_count;
+    int def_capacity;
+
+    ir_id_t id;
+} opt_liveness_t;
+
 static inline ir_instruction_t* ir_fetch(ir_block_t* block, ir_id_t result) {
     for (int i = 0; i < block->instruction_count; ++i) {
         ir_instruction_t* instr = &block->instructions[i];

@@ -64,7 +64,6 @@ endif
 
 SOURCES := $(wildcard $(SRC)/*.c)
 JIT_SOURCES := $(wildcard $(JIT)/*.c)
-INCLUDE := $(wildcard $(SRC)/*.h)
 PRE := $(patsubst $(JIT)/%.c,$(ARTIFACTS)/%.$(ARCH).c,$(JIT_SOURCES))
 OBJECTS := $(patsubst $(SRC)/%.c,$(ARTIFACTS)/%.o,$(SOURCES)) $(patsubst $(ARTIFACTS)/%.$(ARCH).c,$(ARTIFACTS)/%.o,$(PRE))
 
@@ -80,10 +79,13 @@ build: deps rebuild $(OBJECTS)
 $(ARTIFACTS)/%.o: $(SRC)/%.c
 	$(COMPILER) $(CFLAGS) -c $(SRC)/$*.c -o $@ -I$(SRC) -I$(JIT)
 
-$(ARTIFACTS)/%.o: $(ARTIFACTS)/%.$(ARCH).c
-	$(COMPILER) $(CFLAGS) -c $(ARTIFACTS)/$*.$(ARCH).c -o $@
+$(ARTIFACTS)/%.o: $(JIT)/reg.c
+	$(COMPILER) $(CFLAGS) -c $< -o $@ -I$(SRC) -I$(JIT)
 
-$(ARTIFACTS)/%.$(ARCH).c: $(JIT)/%.c
+$(ARTIFACTS)/%.o: $(ARTIFACTS)/%.$(ARCH).c
+	$(COMPILER) $(CFLAGS) -c $(ARTIFACTS)/$*.$(ARCH).c -o $@ -I$(SRC) -I$(JIT) -I$(DYNASM)
+
+$(ARTIFACTS)/x86_64.$(ARCH).c: $(JIT)/x86_64.c
 	$(LUA) $(DYNASM)/dynasm.lua -D $(ARCH) -o $@ $<
 
 deps:
