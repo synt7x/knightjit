@@ -73,12 +73,12 @@ typedef struct lexer {
     token_t t;
 } lexer_t;
 
-void lexer_init(lexer_t* lexer, const char* input, int size);
-void lexer_load(token_t* token, lexer_t* lexer);
+void l_init(lexer_t* lexer, const char* input, int size);
+void l_load(token_t* token, lexer_t* lexer);
 
-token_t peek(lexer_t* lexer);
-token_t consume(lexer_t* lexer);
-token_t accept(lexer_t* lexer, token_type_t type);
-token_t expect(lexer_t* lexer, token_type_t type);
+token_t l_peek(lexer_t* lexer);
+token_t l_consume(lexer_t* lexer);
+token_t l_accept(lexer_t* lexer, token_type_t type);
+token_t l_expect(lexer_t* lexer, token_type_t type);
 
 #endif

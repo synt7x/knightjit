@@ -1,7 +1,7 @@
 #include "lexer.h"
 #include "debug.h"
 
-void lexer_init(lexer_t* lexer, const char* input, int size) {
+void l_init(lexer_t* lexer, const char* input, int size) {
     lexer->current = 0;
     lexer->linenumber = 1;
     lexer->buffer = input;
@@ -12,7 +12,7 @@ void lexer_init(lexer_t* lexer, const char* input, int size) {
     lexer->t.length = 0;
 }
 
-void lexer_load(token_t* token, lexer_t* lexer) {
+void l_load(token_t* token, lexer_t* lexer) {
     char character = lexer->buffer[lexer->current];
 
     if (character == '\0') {
@@ -25,17 +25,17 @@ void lexer_load(token_t* token, lexer_t* lexer) {
     if (character == '\n') {
         lexer->linenumber++;
         lexer->current++;
-        lexer_load(token, lexer);
+        l_load(token, lexer);
         return;
     } else if (character == '#') {
         while (lexer->current < lexer->size && lexer->buffer[lexer->current] != '\n') {
             lexer->current++;
         }
-        lexer_load(token, lexer);
+        l_load(token, lexer);
         return;
     } else if (character == ' ' || character == '\t' || character == '\r' || character == '(' || character == ')' || character == ':') {
         lexer->current++;
-        lexer_load(token, lexer);
+        l_load(token, lexer);
         return;
     } else if (character >= '0' && character <= '9') {
         token->type = TK_NUMBER;
@@ -139,17 +139,17 @@ void lexer_load(token_t* token, lexer_t* lexer) {
     }
 }
 
-token_t peek(lexer_t* lexer) {
+token_t l_peek(lexer_t* lexer) {
     return lexer->t;
 }
 
-token_t consume(lexer_t* lexer) {
-    lexer_load(&lexer->t, lexer);
+token_t l_consume(lexer_t* lexer) {
+    l_load(&lexer->t, lexer);
     return lexer->t;
 }
 
-token_t accept(lexer_t* lexer, token_type_t type) {
-    token_t token = consume(lexer);
+token_t l_accept(lexer_t* lexer, token_type_t type) {
+    token_t token = l_consume(lexer);
     if (token.type == type) {
         return token;
     }
@@ -162,8 +162,8 @@ token_t accept(lexer_t* lexer, token_type_t type) {
     };
 }
 
-token_t expect(lexer_t* lexer, token_type_t type) {
-    token_t token = accept(lexer, type);
+token_t l_expect(lexer_t* lexer, token_type_t type) {
+    token_t token = l_accept(lexer, type);
     if (token.type == TK_NONE) {
         panic("Expected token type %d but got %d at line %d", type, token.type, lexer->linenumber);
     }

@@ -99,6 +99,6 @@ static inline int ir_is_constant(ir_instruction_t* instr) {
         || instr->op == IR_CONST_NUMBER || instr->op == IR_CONST_STRING;
 }
 
-void ir_optimize(ir_function_t* function);
+opt_liveness_t* ir_optimize(ir_function_t* function);
 
 #endif

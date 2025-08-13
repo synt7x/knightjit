@@ -1,4 +1,4 @@
-JIT_ENABLED ?= JIT_OFF
+JIT_ENABLED ?= JIT_ON
 STANDARD ?= STANDARD
 
 EXECUTABLE ?= knight
@@ -8,10 +8,11 @@ COMPILER ?= clang
 
 SEP := /
 
-CFLAGS := -O3 -march=native -mtune=native -Wall -Wextra -std=c99
+CFLAGS ?= -O3 -march=native -mtune=native
+CFLAGS += -Wall -Wextra -std=c99
 CFLAGS += -finline-functions -fno-stack-protector
 CFLAGS += -ffunction-sections -fdata-sections -fno-builtin
-CFLAGS += -D$(JIT_ENABLED) -D$(STANDARD)
+CFLAGS += -D$(JIT_ENABLED) -D$(STANDARD) -D$(ARCH)
 
 GIT ?= git
 LUA ?= luajit
@@ -77,15 +78,19 @@ build: deps rebuild $(OBJECTS)
 	@echo ==== Built $(TARGET)/$(EXECUTABLE) ====
 
 $(ARTIFACTS)/%.o: $(SRC)/%.c
-	$(COMPILER) $(CFLAGS) -c $(SRC)/$*.c -o $@ -I$(SRC) -I$(JIT)
+	$(COMPILER) $(CFLAGS) -c $(SRC)/$*.c -o $@ -I$(SRC) -I$(JIT) -I$(DYNASM)
 
-$(ARTIFACTS)/%.o: $(JIT)/reg.c
-	$(COMPILER) $(CFLAGS) -c $< -o $@ -I$(SRC) -I$(JIT)
+$(ARTIFACTS)/reg.o: $(JIT)/reg.c
+	$(COMPILER) $(CFLAGS) -c $< -o $@ -I$(SRC) -I$(JIT) -I$(DYNASM)
 
 $(ARTIFACTS)/%.o: $(ARTIFACTS)/%.$(ARCH).c
 	$(COMPILER) $(CFLAGS) -c $(ARTIFACTS)/$*.$(ARCH).c -o $@ -I$(SRC) -I$(JIT) -I$(DYNASM)
 
+# JIT Targets
 $(ARTIFACTS)/x86_64.$(ARCH).c: $(JIT)/x86_64.c
+	$(LUA) $(DYNASM)/dynasm.lua -D $(ARCH) -o $@ $<
+
+$(ARTIFACTS)/x86.$(ARCH).c: $(JIT)/x86.c
 	$(LUA) $(DYNASM)/dynasm.lua -D $(ARCH) -o $@ $<
 
 deps:

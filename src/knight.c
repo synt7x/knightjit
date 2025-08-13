@@ -16,6 +16,10 @@
 
 #include "jit/value.h"
 
+#ifndef JIT_OFF
+#include "jit/compile.h"
+#endif
+
 int main(int argc, char* argv[]) {
     cli_config_t config = cli_parse(argc, argv);
 
@@ -46,11 +50,11 @@ int main(int argc, char* argv[]) {
         }
 
         info(config, "Read %zu bytes from file: %s", size, config.input);
-        lexer_init(&lexer, input, size);
+        l_init(&lexer, input, size);
     } else if (config.input) {
         info(config, "Executing inline code");
 
-        lexer_init(&lexer, config.input, strlen(config.input));
+        l_init(&lexer, config.input, strlen(config.input));
     } else {
         panic("No input provided. Use -h for help.");
     }
@@ -63,7 +67,6 @@ int main(int argc, char* argv[]) {
 
     arena_t* arena = arena_create(512);
     ir_function_t* ir = ir_create(tree, arena, symbol_table, &config);
-    ir_optimize(ir);
 
     arena_free(ast_arena);
 
@@ -144,8 +147,13 @@ int main(int argc, char* argv[]) {
     #ifndef JIT_OFF
     if ((config.flags & CONFIG_JIT) == 0) {
     #endif
+        ir_optimize(ir);
         vm_run(ir, arena);
     #ifndef JIT_OFF
+    } else {
+        opt_liveness_t* liveness = ir_optimize(ir);
+        void (*program)() = compile(ir, liveness);
+        program();
     }
     #endif
 

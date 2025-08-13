@@ -1,4 +1,5 @@
 #include "opt.h"
+#include "jit/reg.h"
 
 void ir_fold(ir_function_t* function) {
     for (int i = 0; i < function->block_count; i++) {
@@ -242,10 +243,15 @@ opt_liveness_t* ir_preserve(ir_function_t* function, opt_liveness_t* tracked) {
     return tracked;
 }
 
-void ir_optimize(ir_function_t* function) {
+opt_liveness_t* ir_optimize(ir_function_t* function) {
     ir_fold(function);
     ir_drop(function);
 
     opt_liveness_t* liveness = ir_preserve(function, ir_ranges(function));
+    #ifndef JIT_OFF
+    return liveness;
+    #else
     free(liveness);
+    return NULL;
+    #endif
 }

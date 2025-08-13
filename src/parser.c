@@ -240,7 +240,7 @@ ast_node_t* quaternary(ast_node_t* node, lexer_t* lexer, arena_t* arena) {
 }
 
 ast_node_t* expression(lexer_t* lexer, arena_t* arena) {
-    token_t token = consume(lexer);
+    token_t token = l_consume(lexer);
     void* node = arena_alloc(arena, sizeof(ast_node_t));
 
     switch (token.type) {
@@ -268,7 +268,7 @@ ast_node_t* expression(lexer_t* lexer, arena_t* arena) {
 
 ast_node_t* parse(lexer_t* lexer, arena_t* arena) {
     void* node = expression(lexer, arena);
-    consume(lexer);
+    l_consume(lexer);
 
     if (lexer->t.type != TK_EOF) {
         panic("Unexpected token after body: %s", lexer->t.value);
