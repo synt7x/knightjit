@@ -14,13 +14,11 @@ typedef int64_t v_boolean_t;
 typedef uintptr_t v_block_t;
 
 typedef struct v_string {
-    int ref_count;
     size_t length;
     char* data;
 } v_string_box_t;
 
 typedef struct v_list {
-    int ref_count;
     size_t length;
     size_t capacity;
     v_t* items;
@@ -64,7 +62,6 @@ static inline const char* v_type(v_t v) {
 static inline v_t v_create_string(const char* str, size_t length) {
     v_string_box_t* box = malloc(sizeof(v_string_box_t) + length + 1);
     if (!box) panic("Failed to allocate memory for string box");
-    box->ref_count = 0;
     box->length = length;
     box->data = (char*)(box + 1);
     memcpy(box->data, str, length);
@@ -74,7 +71,6 @@ static inline v_t v_create_string(const char* str, size_t length) {
 
 static inline v_t v_create_list(int capacity) {
     v_list_box_t* box = malloc(sizeof(v_list_box_t));
-    box->ref_count = 0;
     box->length = 0;
     box->capacity = capacity;
     box->items = (v_t*) malloc(sizeof(v_t) * capacity);
@@ -259,33 +255,6 @@ static inline v_t v_coerce(v_t v, v_type_t type) {
         case TYPE_NULL: panic("Cannot coerce to null type");
         case TYPE_BLOCK: panic("Cannot coerce to block type");
         default: return 0;
-    }
-}
-
-static inline void v_reference(v_t v) {
-    if (V_IS_STRING(v)) {
-        v_string_t str = (v_string_t)(v & VALUE_MASK);
-        str->ref_count++;
-    } else if (V_IS_LIST(v)) {
-        v_list_t list = (v_list_t)(v & VALUE_MASK);
-        list->ref_count++;
-    }
-}
-
-static inline void v_release(v_t v) {
-    if (V_IS_STRING(v)) {
-        v_string_t str = (v_string_t) (v & VALUE_MASK);
-        if (--str->ref_count <= 0) {
-            printf("Releasing string: %s\n", str->data);
-            free(str->data);
-            free(str);
-        }
-    } else if (V_IS_LIST(v)) {
-        v_list_t list = (v_list_t) (v & VALUE_MASK);
-        if (--list->ref_count <= 0) {
-            free(list->items);
-            free(list);
-        }
     }
 }
 

@@ -15,6 +15,7 @@
 #include "vm.h"
 
 #include "jit/value.h"
+#include "jit/reg.h"
 
 #ifndef JIT_OFF
 #include "jit/compile.h"
@@ -71,6 +72,9 @@ int main(int argc, char* argv[]) {
     arena_free(ast_arena);
 
     info(config, "Created IR with %d blocks, total size of %zu bytes", ir->block_count, arena->size);
+
+    opt_liveness_t* liveness = ir_optimize(ir);
+    regs_t* regs = reg_allocate(ir, liveness);
 
     if (config.flags & CONFIG_IR) {
         ir_function_t* function = ir;
@@ -139,6 +143,11 @@ int main(int argc, char* argv[]) {
                     
                 }
 
+                printf(" REGISTER=%d STACK=%d", 
+                       regs[instr->result].reg,
+                       regs[instr->result].slot
+                );
+
                 printf("\n");
             }
         }
@@ -147,12 +156,11 @@ int main(int argc, char* argv[]) {
     #ifndef JIT_OFF
     if ((config.flags & CONFIG_JIT) == 0) {
     #endif
-        ir_optimize(ir);
         vm_run(ir, arena);
     #ifndef JIT_OFF
     } else {
-        opt_liveness_t* liveness = ir_optimize(ir);
-        void (*program)() = compile(ir, liveness);
+        //opt_liveness_t* liveness = ir_optimize(ir);
+        void (*program)() = compile(ir, regs);
         program();
     }
     #endif

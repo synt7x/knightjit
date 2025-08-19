@@ -107,7 +107,6 @@ static inline v_t vm_ultimate(v_t value) {
         }
         v_list_t tail = (v_list_t) (v_create_list(list->length - 1) & VALUE_MASK);
         tail->length = list->length - 1;
-        tail->ref_count = 1;
         memcpy(tail->items, list->items + 1, sizeof(v_t) * tail->length);
         return (v_t)tail | TYPE_LIST;
     } else {
@@ -169,7 +168,6 @@ static inline v_t vm_add(v_t left, v_t right) {
         v_list_t joined = (v_list_t) (v_create_list(l->length + r->length) & VALUE_MASK);
 
         joined->length = l->length + r->length;
-        joined->ref_count = 1;
 
         memcpy(joined->items, l->items, sizeof(v_t) * l->length);
         memcpy(joined->items + l->length, r->items, sizeof(v_t) * r->length);
@@ -237,7 +235,6 @@ static inline v_t vm_mul(v_t left, v_t right) {
 
         result->length = list->length * repeat_count;
         result->capacity = result->length;
-        result->ref_count = 1;
         result->items = malloc(sizeof(v_t) * result->length);
         if (!result->items) panic("Failed to allocate memory for list items");
 

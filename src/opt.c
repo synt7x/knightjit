@@ -244,14 +244,17 @@ opt_liveness_t* ir_preserve(ir_function_t* function, opt_liveness_t* tracked) {
 }
 
 opt_liveness_t* ir_optimize(ir_function_t* function) {
-    ir_fold(function);
+    //ir_fold(function);
     ir_drop(function);
 
     opt_liveness_t* liveness = ir_preserve(function, ir_ranges(function));
+
     #ifndef JIT_OFF
-    return liveness;
+    
     #else
-    free(liveness);
-    return NULL;
+    // free(liveness);
+    // return NULL;
     #endif
+
+    return liveness;
 }
