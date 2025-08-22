@@ -1,3 +1,6 @@
+#define X64
+#define JIT_ON
+
 #if defined(JIT_ON) && defined(X64)
 
 #include <stdio.h>
@@ -13,6 +16,25 @@
 
 | .arch x64
 
+int jit_truthy(ir_instruction_t* instr) {
+    switch (instr->op) {
+        case IR_CONST_STRING:
+            v_string_t str = (v_string_t) (instr->constant.value & VALUE_MASK);
+            return str->length > 0 ? 1 : 0;
+        case IR_CONST_NUMBER:
+            return (instr->constant.value >> 3) != 0 ? 1 : 0;
+        case IR_CONST_BOOLEAN:
+            return (instr->constant.value >> 3) != 0 ? 1 : 0;
+        case IR_CONST_NULL:
+            return 0;
+        case IR_CONST_ARRAY:
+            v_list_t list = (v_list_t) (instr->constant.value & VALUE_MASK);
+            return list->length > 0 ? 1 : 0;
+        default:
+            return -1;
+    }
+}
+
 void jit_add(dasm_State** Dst, ir_function_t* ir, ir_id_t left, ir_id_t right, ir_id_t result, regs_t* regs) {
     ir_instruction_t* l = jit_fetch(ir, left);
     ir_instruction_t* r = jit_fetch(ir, right);
@@ -22,6 +44,34 @@ void jit_add(dasm_State** Dst, ir_function_t* ir, ir_id_t left, ir_id_t right, i
     | mov64 Rq(reg), (r->constant.value >> 3)
     | add Rq(reg), (l->constant.value >> 3)
     | shl Rq(reg), 3
+}
+
+void jit_sub(dasm_State** Dst, ir_function_t* ir, ir_id_t left, ir_id_t right, ir_id_t result, regs_t* regs) {
+    ir_instruction_t* l = jit_fetch(ir, left);
+    ir_instruction_t* r = jit_fetch(ir, right);
+
+    int reg = regs[result].reg;
+
+    | mov64 Rq(reg), (l->constant.value >> 3)
+    | sub Rq(reg), (r->constant.value >> 3)
+    | shl Rq(reg), 3
+}
+
+void jit_branch(dasm_State** Dst, ir_function_t* ir, ir_instruction_t* instr, regs_t* regs) {
+    ir_block_t* truthy = instr->branch.truthy;
+    ir_block_t* falsey = instr->branch.falsey;
+
+    ir_id_t condition = instr->branch.condition;
+    ir_instruction_t* cond = jit_fetch(ir, condition);
+    // int reg = regs[condition].reg;
+    int constant = jit_truthy(cond);
+    if (constant != -1) {
+        | jmp =>truthy->id
+    } else if (!constant) {
+        | jmp =>falsey->id
+    }
+
+
 }
 
 void jit_output(v_t value) {
@@ -84,6 +134,7 @@ void* compile(ir_function_t* ir, regs_t* regs) {
 
         block->id = cpc;
         | =>pc(&d, cpc, apc):
+        cpc++;
         for (int i = 0; i < block->instruction_count; i++) {
             ir_instruction_t instr = block->instructions[i];
 
@@ -107,11 +158,40 @@ void* compile(ir_function_t* ir, regs_t* regs) {
                     | lea Rq(reg), [<2]
                     | or Rq(reg), TYPE_STRING
                     break;
+                case IR_CONST_ARRAY:
+                    | .constants
+                    | .align 8
+                    v_list_t list = (v_list_t) (instr.constant.value & VALUE_MASK);
+
+                    | 2:
+                    | .qword list->length
+                    | .qword list->capacity
+                    | .qword >1
+                    | 1:
+                    for (size_t i = 0; i < list->capacity; i++) {
+                        | .qword list->items[i]
+                    }
+
+                    | .code
+                    | lea Rq(reg), [<2]
+                    | or Rq(reg), TYPE_LIST
+                    break;
                 case IR_ADD:
                     jit_add(Dst, ir, instr.generic.operands[0], instr.generic.operands[1], instr.result, regs);
                     break;
+                case IR_SUB:
+                    jit_sub(Dst, ir, instr.generic.operands[0], instr.generic.operands[1], instr.result, regs);
+                    break;
                 case IR_OUTPUT:
-                    | mov rcx, Rq(regs[instr.generic.operands[0]].reg)
+                    ir_instruction_t* value = jit_fetch(ir, instr.generic.operands[0]);
+                    switch (value->op) {
+                        case IR_CONST_NUMBER: case IR_CONST_BOOLEAN: case IR_CONST_NULL:
+                            | mov64 rcx, value->constant.value
+                            break;
+                        default:
+                            | mov rcx, Rq(regs[instr.generic.operands[0]].reg)
+                            break;
+                    }
 
                     | prelude
 
@@ -124,8 +204,15 @@ void* compile(ir_function_t* ir, regs_t* regs) {
                     #endif
 
                     | epilogue
+                    | mov Rq(reg), TYPE_NULL
                     break;
-                case IR_PUSH:
+                case IR_JUMP:
+                    | jmp =>instr.jump.block->id
+                    break;
+                case IR_BRANCH:
+                    jit_branch(Dst, ir, &instr, regs);
+                    break;
+                case IR_SAVE:
                     for (int i = 0; i < instr.generic.operand_count; i++) {
                         ir_id_t operand = instr.generic.operands[i];
                         ir_instruction_t* op = jit_fetch(ir, operand);
@@ -133,7 +220,8 @@ void* compile(ir_function_t* ir, regs_t* regs) {
 
                         | push Rq(reg)
                     }
-                case IR_POP:
+                    break;
+                case IR_RESTORE:
                     for (int i = instr.generic.operand_count - 1; i >= 0; i--) {
                         ir_id_t operand = instr.generic.operands[i];
                         ir_instruction_t* op = jit_fetch(ir, operand);
@@ -141,6 +229,7 @@ void* compile(ir_function_t* ir, regs_t* regs) {
 
                         | pop Rq(reg)
                     }
+                    break;
                 default:
                     continue;
             }

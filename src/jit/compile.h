@@ -47,7 +47,7 @@ static unsigned int pc(dasm_State** Dst, unsigned int cpc, unsigned int apc) {
         dasm_growpc(Dst, apc);
     }
     
-    return cpc++;
+    return cpc;
 }
 
 static void* link(dasm_State** d) {
