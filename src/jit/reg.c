@@ -3,7 +3,7 @@
 #include "jit/reg.h"
 #define REGISTERS 8
 
-regs_t* reg_allocate(ir_function_t* ir, opt_liveness_t* liveness) {
+reg_info_t reg_allocate(ir_function_t* ir, opt_liveness_t* liveness) {
     int alloc[REGISTERS];
     for (int i = 0; i < REGISTERS; i++) {
         alloc[i] = 0;
@@ -51,5 +51,8 @@ regs_t* reg_allocate(ir_function_t* ir, opt_liveness_t* liveness) {
         }
     }
 
-    return regs;
+    return (reg_info_t) {
+        .regs = regs,
+        .max_slot = stack_slot
+    };
 }

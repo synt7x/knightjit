@@ -126,7 +126,7 @@ static inline v_t v_coerce_to_string(v_t v) {
     if (V_IS_NUMBER(v)) {
         v_number_t number = (v_number_t) v >> 3;
         char buffer[32];
-        snprintf(buffer, sizeof(buffer), "%lld", (int64_t)number);
+        snprintf(buffer, sizeof(buffer), "%ld", (int64_t)number);
         return v_create_string(buffer, strlen(buffer));
     } else if (V_IS_BOOLEAN(v)) {
         return v_create_string((v_boolean_t)(v >> 3) ? "true" : "false", (v_boolean_t)(v >> 3) ? 4 : 5);
@@ -197,7 +197,7 @@ static inline v_t v_coerce_to_list(v_t v) {
             panic("Cannot coerce negative number to list of digits");
         }
         char buffer[32];
-        snprintf(buffer, sizeof(buffer), "%lld", number);
+        snprintf(buffer, sizeof(buffer), "%ld", number);
         size_t len = strlen(buffer);
         v_t list = v_create_list((int)len);
         v_list_t box = (v_list_t)(list & VALUE_MASK);

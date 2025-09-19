@@ -74,8 +74,6 @@ typedef enum ir_op {
     IR_RESTORE,
 } ir_op_t;
 
-typedef struct ir_block ir_block_t;
-
 typedef struct ir_instruction {
     ir_id_t result;
     ir_op_t op;

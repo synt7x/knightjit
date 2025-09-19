@@ -1,7 +1,5 @@
 local log = {}
 
--- ANSI escape code for producing
--- colored output in the terminal.
 log.colors = {
 	red = "\27[31m",
 	green = "\27[32m",
@@ -34,6 +32,8 @@ function log.completed(passed, failed, todo, total)
 			.. " tests."
 	)
 end
+
+
 
 function log.it(section, description, name)
 	print(

@@ -13,6 +13,11 @@ typedef struct regs {
     int slot;
 } regs_t;
 
-regs_t* reg_allocate(ir_function_t* ir, opt_liveness_t* liveness);
+typedef struct reg_info {
+    regs_t* regs;
+    int max_slot;
+} reg_info_t;
+
+reg_info_t reg_allocate(ir_function_t* ir, opt_liveness_t* liveness);
 
 #endif

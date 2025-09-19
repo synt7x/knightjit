@@ -74,10 +74,11 @@ int main(int argc, char* argv[]) {
     info(config, "Created IR with %d blocks, total size of %zu bytes", ir->block_count, arena->size);
 
     opt_liveness_t* liveness = ir_optimize(ir);
-    regs_t* regs = reg_allocate(ir, liveness);
+    reg_info_t reg_info = reg_allocate(ir, liveness);
 
     if (config.flags & CONFIG_IR) {
         ir_function_t* function = ir;
+        regs_t* regs = reg_info.regs;
         printf("IR (%p):\n", function);
         for (int i = 0; i < function->block_count; ++i) {
             ir_block_t* block = function->blocks[i];
@@ -160,7 +161,7 @@ int main(int argc, char* argv[]) {
     #ifndef JIT_OFF
     } else {
         //opt_liveness_t* liveness = ir_optimize(ir);
-        void (*program)() = compile(ir, regs);
+        void (*program)() = compile(ir, reg_info);
         program();
     }
     #endif

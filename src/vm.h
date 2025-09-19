@@ -46,6 +46,43 @@ static inline v_t vm_pop(vm_stack_t* stack) {
     return stack->items[--stack->size];
 }
 
+static inline v_t vm_prompt() {
+    int capacity = 16;
+    int length = 0;
+    char* buffer = malloc(16);
+    if (!buffer) panic("Failed to allocate memory for prompt buffer");
+
+    char character;
+    while ((character = getchar()) != EOF && character != '\n') {
+        if (length + 1 >= capacity) {
+            capacity *= 2;
+            char* str = realloc(buffer, capacity);
+            if (!str) {
+                free(buffer);
+                panic("Failed to reallocate memory for prompt buffer");
+            }
+
+            buffer = str;
+        }
+        buffer[length++] = character;
+    }
+
+    if (character == EOF && length == 0) {
+        free(buffer);
+        return (v_t)TYPE_NULL;
+    }
+
+    if (length > 0 && buffer[length - 1] == '\r') {
+        length--;
+    }
+
+    buffer[length] = '\0';
+
+    v_t result = v_create_string(buffer, length);
+    free(buffer);
+    return result;
+}
+
 static inline v_t vm_ascii(v_t value) {
     if (V_IS_NUMBER(value) && value >> 3 < 0xFF) {
         return (v_t) v_create_string((char[]){(char)(value >> 3), '\0'}, 1);

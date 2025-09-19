@@ -118,7 +118,7 @@ end
 -- output and exit code.
 function test.run(code, stdin)
 	code = code:gsub('"', '\\"')
-	local echo = stdin and "echo " .. stdin .. " |" or ""
+	local echo = stdin and 'echo "' .. stdin .. '" | ' or ""
 
 	local handle = io.popen(echo .. test_harness.executable .. ' -e "D ' .. code .. '"', "r")
 	local stdout = handle:read("*a")
@@ -129,7 +129,7 @@ end
 -- Refute the successful execution of a piece of Knight code.
 function test.refute(code, stdin)
 	code = code:gsub('"', '\\"')
-	local echo = stdin and 'echo "' .. stdin .. '" |' or ""
+	local echo = stdin and 'echo "' .. stdin .. '" | ' or ""
 
 	local handle = io.popen(echo .. test_harness.executable .. ' -e "D ' .. code .. '" 2>' .. null(), "r")
 	local stdout = handle:read("*a")
@@ -153,7 +153,7 @@ end
 -- Require the successful execution of a piece of Knight code.
 function test.must(code, stdin)
 	code = code:gsub('"', '\\"')
-	local echo = stdin and 'echo "' .. stdin .. '" |' or ""
+	local echo = stdin and 'echo "' .. stdin .. '" | ' or ""
 
 	local handle = io.popen(echo .. test_harness.executable .. ' -e "D ' .. code .. '"', "r")
 	local stdout = handle:read("*a")

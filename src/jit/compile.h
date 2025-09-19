@@ -63,6 +63,6 @@ static void* link(dasm_State** d) {
     return ptr;
 }
 
-void* compile(ir_function_t* ir, regs_t* regs);
+void* compile(ir_function_t* ir, reg_info_t reg_info);
 
 #endif
