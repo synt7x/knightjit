@@ -260,7 +260,6 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
 
         if (cpc == 0) {
             | lea rbp, [rsp - 8]
-            printf("%d", reg_info.max_slot);
             | sub rsp, (8 + ((reg_info.max_slot + 1) & 2) * 8)
         }
 
