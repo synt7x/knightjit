@@ -1,7 +1,7 @@
 #include "opt.h"
 
 #include "jit/reg.h"
-#define REGISTERS 8
+#define REGISTERS (16 - 4)
 
 reg_info_t reg_allocate(ir_function_t* ir, opt_liveness_t* liveness) {
     int alloc[REGISTERS];
@@ -27,10 +27,10 @@ reg_info_t reg_allocate(ir_function_t* ir, opt_liveness_t* liveness) {
             if (lifetime.end == -1) continue;
             if (instr->op == IR_BLOCK || instr->op == IR_CONST_NULL || instr->op == IR_CONST_BOOLEAN || instr->op == IR_CONST_NUMBER) continue;
 
-            for (int p = 0; p < ir->next_value_id; p++) {
+            for (int p = result + 1; p < ir->next_value_id; p++) {
                 int reg = regs[p].reg;
-                if (reg != -1 && liveness[p].end < i) {
-                    alloc[regs[p].reg] = 0;
+                if (reg != -1 && (p > liveness[result].end)) {
+                    alloc[reg] = 0;
                 }
             }
 

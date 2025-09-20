@@ -163,7 +163,8 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
 
     | .define arg, Rq(ARG_REG)
     | .define hldr, Rq(CLOBBER_REG)
-    | .define temp, Rq(6)
+    | .define temp1, Rq(6)
+    | .define temp2, Rq(7)
 
     | .macro prelude
     | push rbp
@@ -188,26 +189,47 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
     | .macro ldr, r, v
     || if (r.reg != -1) {
         || if (r.reg > 3) {
-        | mov Rq(r.reg + 3), v
+        | mov Rq(r.reg + 4), v
         ||} else {
         | mov Rq(r.reg), v
         ||}
     ||} else if (r.slot != -1) {
-    | mov temp, v
-    | mov [rbp - (r.slot * 8)], temp
+    | mov temp1, v
+    | mov [rbp - (r.slot * 8)], temp1
     ||}
     | .endmacro
 
     | .macro rdr, t, r
     ||if (r.reg != -1) {
     || if (r.reg > 3) {
-    | mov t, Rq(r.reg + 3)
+    | mov t, Rq(r.reg + 4)
     ||} else {
     | mov t, Rq(r.reg)
     ||}
     ||} else if (r.slot != -1) {
     | mov t, [rbp - (r.slot * 8)]
     ||}
+    | .endmacro
+
+    | .macro type, t, r
+    ||if (r.reg != -1) {
+    | rdr t, r
+    | and t, 0b111
+    ||} else if (r.slot != -1) {
+    | mov t, [rbp - (r.slot * 8)]
+    | and t, 0b111
+    ||}
+    | .endmacro
+
+    | .macro coerce, t, r
+    | type temp1, t
+    | type temp2, r
+    | cmp temp1, temp2
+    | jne >1
+    | rdr temp1, r
+    | jmp >0
+    | 1:
+    | 0:
     | .endmacro
 
     | .section code, constants, variables
@@ -238,7 +260,8 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
 
         if (cpc == 0) {
             | lea rbp, [rsp - 8]
-            | sub rsp, (8 + reg_info.max_slot * 8)
+            printf("%d", reg_info.max_slot);
+            | sub rsp, (8 + ((reg_info.max_slot + 1) & 2) * 8)
         }
 
         cpc++;
@@ -262,9 +285,9 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
                     }
 
                     | .code
-                    | lea temp, [<2]
-                    | or temp, TYPE_STRING
-                    | ldr reg, temp
+                    | lea temp1, [<2]
+                    | or temp1, TYPE_STRING
+                    | ldr reg, temp1
                     break;
                 case IR_CONST_ARRAY:
                     | .constants
@@ -363,7 +386,7 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
                     continue;
             }
         }
-        | add rsp, (8 + reg_info.max_slot * 8)
+        | add rsp, (8 + ((reg_info.max_slot + 1) & 2) * 8)
         | ret
     }
 

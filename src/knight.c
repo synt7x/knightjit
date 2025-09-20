@@ -149,6 +149,8 @@ int main(int argc, char* argv[]) {
                        regs[instr->result].slot
                 );
 
+                printf(" LIVENESS START=%d END=%d", liveness[instr->result].start, liveness[instr->result].end);
+
                 printf("\n");
             }
         }
