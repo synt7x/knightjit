@@ -170,20 +170,17 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
     regs_t* regs = reg_info.regs;
 
     | .define arg, Rq(ARG_REG)
-    | .define hldr, Rq(CLOBBER_REG)
     | .define temp1, Rq(6)
     | .define temp2, Rq(7)
 
     | .macro prelude
     | push rbp
     | push arg
-    | push hldr
     | sub rsp, 40
     | .endmacro
 
     | .macro epilogue
     | add rsp, 40
-    | pop hldr
     | pop arg
     | pop rbp
     | .endmacro
@@ -254,6 +251,7 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
     dasm_growpc(Dst, apc);
 
     | .variables
+    | .align 8
     | ->variables:
     for (int i = 0; i <= ir->var_id; i++) {
         | .qword 0
@@ -267,6 +265,7 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
         | =>pc(&d, cpc, apc):
 
         if (cpc == 0) {
+            //| int3
             | lea rbp, [rsp - 8]
             | sub rsp, (8 + ((reg_info.max_slot + 1) & 2) * 8)
         }
@@ -290,6 +289,7 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
                     for (size_t i = 0; i < str->length; i++) {
                         | .byte str->data[i]
                     }
+                    | .byte 0
 
                     | .code
                     | lea temp1, [<2]
