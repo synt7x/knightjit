@@ -20,7 +20,7 @@
         #define MAP_ANONYMOUS MAP_ANON
     #endif
     #define jalloc(size) mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)
-    #define jprotect(ptr, size) mprotect(ptr, size, PROT_READ | PROT_EXEC);
+    #define jprotect(ptr, size) mprotect(ptr, size, PROT_READ | PROT_WRITE | PROT_EXEC);
     #define ARG_REG 7
     #define CLOBBER_REG 1
     #define POSIX_ABI

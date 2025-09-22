@@ -69,6 +69,14 @@ v_t jit_prompt() {
     return result;
 }
 
+void jit_length(dasm_State** Dst, ir_function_t* ir, ir_id_t value, ir_id_t result, regs_t* regs) {
+    ir_instruction_t* p = jit_fetch(ir, value);
+    regs_t input = regs[value];
+    regs_t reg = regs[result];
+
+    
+}
+
 void jit_add(dasm_State** Dst, ir_function_t* ir, ir_id_t left, ir_id_t right, ir_id_t result, regs_t* regs) {
     ir_instruction_t* l = jit_fetch(ir, left);
     ir_instruction_t* r = jit_fetch(ir, right);
@@ -247,7 +255,7 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
 
     | .variables
     | ->variables:
-    for (int i = 0; i < ir->var_id; i++) {
+    for (int i = 0; i <= ir->var_id; i++) {
         | .qword 0
     }
 
@@ -303,13 +311,30 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
                     }
 
                     | .code
-                    // | lea Rq(reg), [<2]
-                    // | or Rq(reg), TYPE_LIST
+                    | lea temp1, [<2]
+                    | or temp1, TYPE_LIST
+                    | ldr reg, temp1
                     break;
                 case IR_PROMPT:
                     | prelude
                     | foreign jit_prompt
                     | epilogue
+                    break;
+                case IR_STORE:
+                    | rdr temp2, regs[instr.var.value]
+                    | lea temp1, [->variables]
+                    | add temp1, (instr.var.var_id * 8)
+                    | mov [temp1], temp2
+                    break;
+                case IR_LOAD:
+                    
+                    | lea temp1, [->variables]
+                    | add temp1, (instr.var.var_id * 8)
+                    | mov temp1, [temp1]
+                    | ldr reg, temp1
+                    break;
+                case IR_LENGTH:
+                    jit_length(Dst, ir, instr.generic.operands[0], instr.result, regs);
                     break;
                 case IR_ADD:
                     jit_add(Dst, ir, instr.generic.operands[0], instr.generic.operands[1], instr.result, regs);
