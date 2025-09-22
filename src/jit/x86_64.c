@@ -169,6 +169,10 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
 
     regs_t* regs = reg_info.regs;
 
+    int slots = 8 * (reg_info.max_slot + 1);
+    int frame_size = ((slots + 8 * 8 + 15) & ~15);
+    int frame_shadow = frame_size - 8 * 8;
+
     | .define arg, Rq(ARG_REG)
     | .define temp1, Rq(6)
     | .define temp2, Rq(7)
@@ -176,11 +180,24 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
     | .macro prelude
     | push rbp
     | push arg
-    | sub rsp, 40
+    | mov rbp, rsp
+    | push rax
+    | push rbx
+    | push r12
+    | push r13
+    | push r14
+    | push r15
+    | sub rsp, frame_shadow
     | .endmacro
 
     | .macro epilogue
-    | add rsp, 40
+    | add rsp, frame_shadow
+    | pop r15
+    | pop r14
+    | pop r13
+    | pop r12
+    | pop rbx
+    | pop rax
     | pop arg
     | pop rbp
     | .endmacro
@@ -321,13 +338,21 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
                     | epilogue
                     break;
                 case IR_STORE:
-                    | rdr temp2, regs[instr.var.value]
+                    ir_instruction_t* value = jit_fetch(ir, instr.var.value);
+                    switch (value->op) {
+                        case IR_CONST_NUMBER: case IR_CONST_BOOLEAN: case IR_CONST_NULL:
+                            | mov64 temp2, value->constant.value
+                            break;
+                        default:
+                            | rdr temp2, regs[instr.var.value]
+                            break;
+                    }
+
                     | lea temp1, [->variables]
                     | add temp1, (instr.var.var_id * 8)
                     | mov [temp1], temp2
                     break;
                 case IR_LOAD:
-                    
                     | lea temp1, [->variables]
                     | add temp1, (instr.var.var_id * 8)
                     | mov temp1, [temp1]
@@ -343,7 +368,7 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
                     jit_sub(Dst, ir, instr.generic.operands[0], instr.generic.operands[1], instr.result, regs);
                     break;
                 case IR_OUTPUT:
-                    ir_instruction_t* value = jit_fetch(ir, instr.generic.operands[0]);
+                    value = jit_fetch(ir, instr.generic.operands[0]);
                     
                     | prelude
 
@@ -376,7 +401,6 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
                     }
 
                     | foreign jit_dump
-
                     | ldr reg, arg
                     | epilogue
                     break;
