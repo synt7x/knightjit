@@ -228,6 +228,7 @@ void jit_length(dasm_State** Dst, ir_function_t* ir, ir_id_t value, ir_id_t resu
             | pop rcx
             | pop rdx
             | pop rax
+            | shl temp2, 3
             | ldr reg, temp2
             | jmp >7
 
