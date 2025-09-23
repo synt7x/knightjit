@@ -433,7 +433,9 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
                 case IR_PROMPT:
                     | prelude
                     | foreign jit_prompt
+                    | mov temp1, rax
                     | epilogue
+                    | ldr reg, temp1
                     break;
                 case IR_STORE:
                     ir_instruction_t* value = jit_fetch(ir, instr.var.value);
