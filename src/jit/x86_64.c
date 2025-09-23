@@ -23,6 +23,7 @@
 | mov rbp, rsp
 | push rax
 | push rbx
+| push rcx
 | push r12
 | push r13
 | push r14
@@ -36,6 +37,7 @@
 | pop r14
 | pop r13
 | pop r12
+| pop rcx
 | pop rbx
 | pop rax
 | pop arg
@@ -350,8 +352,8 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
     regs_t* regs = reg_info.regs;
 
     int slots = 8 * (reg_info.max_slot + 1);
-    int frame_size = ((slots + 8 * 8 + 15) & ~15);
-    int frame_shadow = frame_size - 8 * 8;
+    int frame_size = ((slots + 9 * 8 + 15) & ~15);
+    int frame_shadow = frame_size - 9 * 8;
 
     | .section code, constants, variables
     dasm_init(&d, DASM_MAXSECTION);
