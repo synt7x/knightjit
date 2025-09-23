@@ -208,29 +208,35 @@ void jit_length(dasm_State** Dst, ir_function_t* ir, ir_id_t value, ir_id_t resu
             | jl >5 // Handle single digits
 
             /* Multi-digit numbers */
+
+            // Preserve registers
             | push rax
             | push rdx
             | push rcx
 
-            | mov temp1, temp2
-            | xor temp2, temp2
+            | mov temp1, temp2 // Input
+            | xor temp2, temp2 // Digits
 
             | 1:
-            | inc temp2
+            | inc temp2 // Increase count
             | mov rax, temp1
             | xor rdx, rdx
-            | mov rcx, 10
-            | div rcx
-            | mov temp1, rax
-            | cmp temp1, 0
-            | jne <1
+            | mov rcx, 10 // Divisor
 
+            | div rcx // temp1 / 10
+            | mov temp1, rax // -> temp1
+            | cmp temp1, 0
+            | jne <1 // Finish if nothing left over
+
+            // Restore registers
             | pop rcx
             | pop rdx
             | pop rax
+
+            // Prepare value
             | shl temp2, 3
             | ldr reg, temp2
-            | jmp >7
+            | jmp >7 // Finish
 
             | 3:
             | ldr reg, 0 // Return 0 for null
