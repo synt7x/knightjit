@@ -13,6 +13,103 @@
 
 | .arch x64
 
+| .define arg, Rq(ARG_REG)
+| .define temp1, Rq(6)
+| .define temp2, Rq(7)
+
+| .macro prelude
+| push rbp
+| push arg
+| mov rbp, rsp
+| push rax
+| push rbx
+| push r12
+| push r13
+| push r14
+| push r15
+| sub rsp, frame_shadow
+| .endmacro
+
+| .macro epilogue
+| add rsp, frame_shadow
+| pop r15
+| pop r14
+| pop r13
+| pop r12
+| pop rbx
+| pop rax
+| pop arg
+| pop rbp
+| .endmacro
+
+| .macro foreign, fn
+| mov rbp, rsp
+| mov64 rax, (uint64_t) fn
+| call rax
+| .endmacro
+
+| .macro ldr, r, v
+|| if (r.reg != -1) {
+    || if (r.reg > 3) {
+    | mov Rq(r.reg + 4), v
+    ||} else {
+    | mov Rq(r.reg), v
+    ||}
+||} else if (r.slot != -1) {
+| mov temp1, v
+| mov [rbp - (r.slot * 8)], temp1
+||}
+| .endmacro
+
+| .macro rdr, t, r
+||if (r.reg != -1) {
+|| if (r.reg > 3) {
+| mov t, Rq(r.reg + 4)
+||} else {
+| mov t, Rq(r.reg)
+||}
+||} else if (r.slot != -1) {
+| mov t, [rbp - (r.slot * 8)]
+||}
+| .endmacro
+
+| .macro type, t, r
+||if (r.reg != -1) {
+| rdr t, r
+| and t, 0b111
+||} else if (r.slot != -1) {
+| mov t, [rbp - (r.slot * 8)]
+| and t, 0b111
+||}
+| .endmacro
+
+| .macro coerce, t, r
+| type temp1, t
+| type temp2, r
+| cmp temp1, temp2
+| jne >1
+| rdr temp1, r
+| jmp >0
+| 1:
+| 0:
+| .endmacro
+
+| .macro panic, code
+| sub rsp, 64
+| and rsp, -16
+| mov arg, code
+| foreign jit_panic
+| .endmacro
+
+
+void jit_panic(int code) {
+    switch (code) {
+        case 1: panic("Cannot coerce negative number to list of digits"); break;
+        case 2: panic("Cannot coerce boolean to list type"); break;
+        default: panic("Unknown JIT panic code %d", code); break;
+    }
+}
+
 int jit_truthy(ir_instruction_t* instr) {
     switch (instr->op) {
         case IR_CONST_STRING:
@@ -74,7 +171,83 @@ void jit_length(dasm_State** Dst, ir_function_t* ir, ir_id_t value, ir_id_t resu
     regs_t input = regs[value];
     regs_t reg = regs[result];
 
-    
+    switch (p->op) {
+        default:
+            | type temp1, input // Gather type
+            | rdr temp2, input // Read value
+            | and temp2, -8 // Drop type bits
+
+            /* Handle string and list types */
+            | cmp temp1, TYPE_LIST
+            | je >1 // Jump if list
+            | cmp temp1, TYPE_STRING
+
+            /* Handle number, boolean, and null type */
+            | jne >2 // Jump if not a string
+            
+            /* String and list */
+            | 1:
+            | mov temp2, [temp2] // Dereference length
+            | shl temp2, 3 // Add bits 0b000 -> number
+            | ldr reg, temp2 // Load result into destination
+            | jmp >7 // Finish
+
+            /* Number, boolean, and null */
+            | 2:
+            | cmp temp1, TYPE_NULL
+            | je >3
+
+            | cmp temp1, TYPE_BOOLEAN // Panic on booleans
+            | je >6
+
+            | cmp temp2, 0
+            | jl >4 // Panic if negative
+
+            | shr temp2, 3 // Get raw number
+            | cmp temp2, 10
+            | jl >5 // Handle single digits
+
+            /* Multi-digit numbers */
+            | push rax
+            | push rdx
+            | push rcx
+
+            | mov temp1, temp2
+            | xor temp2, temp2
+
+            | 1:
+            | inc temp2
+            | mov rax, temp1
+            | xor rdx, rdx
+            | mov rcx, 10
+            | div rcx
+            | mov temp1, rax
+            | cmp temp1, 0
+            | jne <1
+
+            | pop rcx
+            | pop rdx
+            | pop rax
+            | ldr reg, temp2
+            | jmp >7
+
+            | 3:
+            | ldr reg, 0 // Return 0 for null
+            | jmp >7
+
+            | 4:
+            | panic 0x1
+
+            | 5:
+            | ldr reg, 1<<3
+            | jmp >7
+
+            | 6:
+            | panic, 0x2
+
+            | 7:
+            break;
+    }
 }
 
 void jit_add(dasm_State** Dst, ir_function_t* ir, ir_id_t left, ir_id_t right, ir_id_t result, regs_t* regs) {
@@ -173,87 +346,6 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
     int frame_size = ((slots + 8 * 8 + 15) & ~15);
     int frame_shadow = frame_size - 8 * 8;
 
-    | .define arg, Rq(ARG_REG)
-    | .define temp1, Rq(6)
-    | .define temp2, Rq(7)
-
-    | .macro prelude
-    | push rbp
-    | push arg
-    | mov rbp, rsp
-    | push rax
-    | push rbx
-    | push r12
-    | push r13
-    | push r14
-    | push r15
-    | sub rsp, frame_shadow
-    | .endmacro
-
-    | .macro epilogue
-    | add rsp, frame_shadow
-    | pop r15
-    | pop r14
-    | pop r13
-    | pop r12
-    | pop rbx
-    | pop rax
-    | pop arg
-    | pop rbp
-    | .endmacro
-
-    | .macro foreign, fn
-    | mov rbp, rsp
-    | mov64 rax, (uint64_t) fn
-    | call rax
-    | .endmacro
-
-    | .macro ldr, r, v
-    || if (r.reg != -1) {
-        || if (r.reg > 3) {
-        | mov Rq(r.reg + 4), v
-        ||} else {
-        | mov Rq(r.reg), v
-        ||}
-    ||} else if (r.slot != -1) {
-    | mov temp1, v
-    | mov [rbp - (r.slot * 8)], temp1
-    ||}
-    | .endmacro
-
-    | .macro rdr, t, r
-    ||if (r.reg != -1) {
-    || if (r.reg > 3) {
-    | mov t, Rq(r.reg + 4)
-    ||} else {
-    | mov t, Rq(r.reg)
-    ||}
-    ||} else if (r.slot != -1) {
-    | mov t, [rbp - (r.slot * 8)]
-    ||}
-    | .endmacro
-
-    | .macro type, t, r
-    ||if (r.reg != -1) {
-    | rdr t, r
-    | and t, 0b111
-    ||} else if (r.slot != -1) {
-    | mov t, [rbp - (r.slot * 8)]
-    | and t, 0b111
-    ||}
-    | .endmacro
-
-    | .macro coerce, t, r
-    | type temp1, t
-    | type temp2, r
-    | cmp temp1, temp2
-    | jne >1
-    | rdr temp1, r
-    | jmp >0
-    | 1:
-    | 0:
-    | .endmacro
-
     | .section code, constants, variables
     dasm_init(&d, DASM_MAXSECTION);
 
@@ -282,7 +374,6 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
         | =>pc(&d, cpc, apc):
 
         if (cpc == 0) {
-            //| int3
             | lea rbp, [rsp - 8]
             | sub rsp, (8 + ((reg_info.max_slot + 1) & 2) * 8)
         }

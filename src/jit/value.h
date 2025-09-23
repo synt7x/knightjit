@@ -193,7 +193,7 @@ static inline v_t v_coerce_to_list(v_t v) {
 
     if (V_IS_NUMBER(v)) {
         v_number_t number = (v_number_t)(v >> 3);
-        if (number < 0) {
+        if ((long) number < 0) {
             panic("Cannot coerce negative number to list of digits");
         }
         char buffer[32];
