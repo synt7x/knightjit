@@ -259,6 +259,45 @@ void jit_length(dasm_State** Dst, ir_function_t* ir, ir_id_t value, ir_id_t resu
     }
 }
 
+void jit_not(dasm_State** Dst, ir_function_t* ir, ir_id_t value, ir_id_t result, regs_t* regs) {
+    ir_instruction_t* p = jit_fetch(ir, value);
+    regs_t input = regs[value];
+    regs_t reg = regs[result];
+
+    switch (p->op) {
+        default:
+            | type temp1, input // Gather type
+            | rdr temp2, input // Read value
+            | and temp2, -8 // Drop type bits
+
+            /* Handle list and strings */
+            | cmp temp1, TYPE_LIST
+            | je >1
+            | cmp temp1, TYPE_STRING
+            | je >1
+
+
+            /* Handle boolean, number, and null types */
+            | mov temp1, TYPE_BOOLEAN
+            | test temp2, temp2
+            | mov temp2, (1 << 3) | TYPE_BOOLEAN
+            | cmovz temp1, temp2
+            | ldr reg, temp1
+            | jmp >2
+
+            /* Dereference lengths */
+            | 1:
+            | mov temp2, [temp2] // Dereference length
+            | mov temp1, TYPE_BOOLEAN
+            | test temp2, temp2
+            | mov temp2, (1 << 3) | TYPE_BOOLEAN
+            | cmovz temp1, temp2
+            | ldr reg, temp1
+
+            | 2:
+    }
+}
+
 void jit_add(dasm_State** Dst, ir_function_t* ir, ir_id_t left, ir_id_t right, ir_id_t result, regs_t* regs) {
     ir_instruction_t* l = jit_fetch(ir, left);
     ir_instruction_t* r = jit_fetch(ir, right);
@@ -462,6 +501,9 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
                     break;
                 case IR_LENGTH:
                     jit_length(Dst, ir, instr.generic.operands[0], instr.result, regs);
+                    break;
+                case IR_NOT:
+                    jit_not(Dst, ir, instr.generic.operands[0], instr.result, regs);
                     break;
                 case IR_ADD:
                     jit_add(Dst, ir, instr.generic.operands[0], instr.generic.operands[1], instr.result, regs);
