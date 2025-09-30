@@ -114,7 +114,6 @@ opt_liveness_t* ir_ranges(ir_function_t* function) {
     for (int i = 0; i < n; i++) {
         tracked[i].start = -1;
         tracked[i].end = -1;
-
         tracked[i].id = i;
     }
 
@@ -125,8 +124,12 @@ opt_liveness_t* ir_ranges(ir_function_t* function) {
             ir_instruction_t* instr = &block->instructions[i];
             ir_id_t id = instr->result;
 
-            tracked[id].start = i;
-            
+            if (id >= 0 && id < n) {
+                if (tracked[id].start == -1)
+                    tracked[id].start = id;
+                tracked[id].end = id;
+            }
+
             switch (instr->op) {
                 case IR_ADD: case IR_SUB: case IR_MUL: case IR_DIV:
                 case IR_MOD: case IR_POW: case IR_GT: case IR_LT:
@@ -137,41 +140,41 @@ opt_liveness_t* ir_ranges(ir_function_t* function) {
                 case IR_OUTPUT: case IR_DUMP: case IR_QUIT:
                     for (int j = 0; j < instr->generic.operand_count; j++) {
                         ir_id_t operand = instr->generic.operands[j];
-                        if (operand < n) {
-                            if (tracked[operand].end < i) {
-                                tracked[operand].end = i;
-                            }
+                        if (operand >= 0 && operand < n) {
+                            if (tracked[operand].start == -1)
+                                tracked[operand].start = operand;
+                            tracked[operand].end = id;
                         }
                     }
                     break;
                 case IR_STORE:
-                    if (instr->var.value < n) {
-                        if (tracked[instr->var.value].end < i) {
-                            tracked[instr->var.value].end = i;
-                        }
+                    if (instr->var.value >= 0 && instr->var.value < n) {
+                        if (tracked[instr->var.value].start == -1)
+                            tracked[instr->var.value].start = instr->var.value;
+                        tracked[instr->var.value].end = id;
                     }
                     break;
                 case IR_BRANCH:
-                    if (instr->branch.condition < n) {
-                        if (tracked[instr->branch.condition].end < i) {
-                            tracked[instr->branch.condition].end = i;
-                        }
+                    if (instr->branch.condition >= 0 && instr->branch.condition < n) {
+                        if (tracked[instr->branch.condition].start == -1)
+                            tracked[instr->branch.condition].start = instr->branch.condition;
+                        tracked[instr->branch.condition].end = id;
                     }
                     break;
                 case IR_RETURN:
-                    if (instr->generic.operand_count > 0 && instr->generic.operands[0] < n) {
-                        if (tracked[instr->generic.operands[0]].end < i) {
-                            tracked[instr->generic.operands[0]].end = i;
-                        }
+                    if (instr->generic.operand_count > 0 && instr->generic.operands[0] >= 0 && instr->generic.operands[0] < n) {
+                        if (tracked[instr->generic.operands[0]].start == -1)
+                            tracked[instr->generic.operands[0]].start = instr->generic.operands[0];
+                        tracked[instr->generic.operands[0]].end = id;
                     }
                     break;
                 case IR_PHI:
                     for (int j = 0; j < instr->phi.phi_count; j++) {
                         ir_id_t phi_value = instr->phi.phi_values[j];
-                        if (phi_value < n) {
-                            if (tracked[phi_value].end < -1) {
-                                tracked[phi_value].end = i;
-                            }
+                        if (phi_value >= 0 && phi_value < n) {
+                            if (tracked[phi_value].start == -1)
+                                tracked[phi_value].start = phi_value;
+                            tracked[phi_value].end = id;
                         }
                     }
                     break;

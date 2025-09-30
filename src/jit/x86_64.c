@@ -1,3 +1,5 @@
+#define JIT_ON
+#define X64
 #if defined(JIT_ON) && defined(X64)
 
 #include <stdio.h>
@@ -85,15 +87,14 @@
 ||}
 | .endmacro
 
-| .macro coerce, t, r
+| .macro coerce, d, t, r
 | type temp1, t
 | type temp2, r
 | cmp temp1, temp2
-| jne >1
-| rdr temp1, r
-| jmp >0
+| je >1
+| panic 0xff
 | 1:
-| 0:
+| mov d, temp2
 | .endmacro
 
 | .macro panic, code
@@ -302,22 +303,85 @@ void jit_add(dasm_State** Dst, ir_function_t* ir, ir_id_t left, ir_id_t right, i
     ir_instruction_t* l = jit_fetch(ir, left);
     ir_instruction_t* r = jit_fetch(ir, right);
 
-    int reg = regs[result].reg;
+    regs_t resr = regs[result];
+    regs_t lr = regs[left];
+    regs_t rr = regs[right];
 
-    | mov64 Rq(reg), (r->constant.value >> 3)
-    | add Rq(reg), (l->constant.value >> 3)
-    | shl Rq(reg), 3
+    switch (l->op) {
+        case IR_CONST_NUMBER:
+            | rdr temp1, rr
+            | mov temp2, l->constant.value
+            | add temp1, temp2
+            | ldr resr, temp1
+            break;
+        default:
+            | coerce temp1, lr, rr // Coerced right in temp1
+            | type temp2, lr // Gather type
+            | cmp temp2, TYPE_NUMBER
+            | jne >1
+            /* Number addition */
+            | rdr temp2, lr
+            | rdr temp1, rr
+            | add temp2, temp1
+            | ldr resr, temp2
+            | jmp >2
+
+            | 1:
+            | panic temp2 // Unimplemented
+
+            | 2:
+
+            break;
+    }
 }
 
 void jit_sub(dasm_State** Dst, ir_function_t* ir, ir_id_t left, ir_id_t right, ir_id_t result, regs_t* regs) {
     ir_instruction_t* l = jit_fetch(ir, left);
     ir_instruction_t* r = jit_fetch(ir, right);
 
-    int reg = regs[result].reg;
+    
+}
 
-    | mov64 Rq(reg), (l->constant.value >> 3)
-    | sub Rq(reg), (r->constant.value >> 3)
-    | shl Rq(reg), 3
+void jit_greater(dasm_State** Dst, ir_function_t* ir, ir_id_t left, ir_id_t right, ir_id_t result, regs_t* regs) {
+    ir_instruction_t* l = jit_fetch(ir, left);
+    ir_instruction_t* r = jit_fetch(ir, right);
+
+    regs_t resr = regs[result];
+    regs_t lr = regs[left];
+    regs_t rr = regs[right];
+
+    switch (l->op) {
+        case IR_CONST_NUMBER:
+            | rdr temp1, rr
+            | mov temp2, l->constant.value
+            | cmp temp2, temp1
+            | mov temp2, TYPE_BOOLEAN // False
+            | mov temp1, ((1 << 3) | TYPE_BOOLEAN) // True
+            | cmovg temp2, temp1
+            | ldr resr, temp2
+            break;
+        default:
+            | coerce temp1, lr, rr // Coerced right in temp1
+            | type temp2, lr // Gather type
+            | cmp temp2, TYPE_NUMBER
+            | jne >1
+            /* Number comparison */
+            | rdr temp2, lr
+            | rdr temp1, rr
+            | cmp temp2, temp1
+            | mov temp2, TYPE_BOOLEAN // False
+            | mov temp1, ((1 << 3) | TYPE_BOOLEAN) // True
+            | cmovg temp2, temp1
+            | ldr resr, temp2
+            | jmp >2
+
+            | 1:
+            | panic temp2 // Unimplemented
+
+            | 2:
+
+            break;
+    }
 }
 
 void jit_branch(dasm_State** Dst, ir_function_t* ir, ir_instruction_t* instr, regs_t* regs) {
@@ -326,11 +390,35 @@ void jit_branch(dasm_State** Dst, ir_function_t* ir, ir_instruction_t* instr, re
 
     ir_id_t condition = instr->branch.condition;
     ir_instruction_t* cond = jit_fetch(ir, condition);
-    // int reg = regs[condition].reg;
+    
     int constant = jit_truthy(cond);
     if (constant != -1) {
         | jmp =>truthy->id
     } else if (!constant) {
+        | jmp =>falsey->id
+    } else {
+        regs_t condition = regs[instr->branch.condition];
+
+        | type temp1, condition // Gather type
+        | rdr temp2, condition // Read value
+        | and temp2, -8 // Drop type bits
+
+        /* Handle list and strings */
+        | cmp temp1, TYPE_LIST
+        | je >1
+        | cmp temp1, TYPE_STRING
+        | je >1
+
+        /* Handle boolean, number, and null types */
+        | test temp2, temp2
+        | jne =>truthy->id
+        | jmp =>falsey->id
+
+        /* Dereference lengths */
+        | 1:
+        | mov temp2, [temp2] // Dereference length
+        | test temp2, temp2
+        | jne =>truthy->id
         | jmp =>falsey->id
     }
 }
@@ -510,6 +598,9 @@ void* compile(ir_function_t* ir, reg_info_t reg_info) {
                     break;
                 case IR_SUB:
                     jit_sub(Dst, ir, instr.generic.operands[0], instr.generic.operands[1], instr.result, regs);
+                    break;
+                case IR_GT:
+                    jit_greater(Dst, ir, instr.generic.operands[0], instr.generic.operands[1], instr.result, regs);
                     break;
                 case IR_OUTPUT:
                     value = jit_fetch(ir, instr.generic.operands[0]);
