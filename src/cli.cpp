@@ -24,8 +24,19 @@ config parse(int argc, char **argv) {
                   << knight::git_hash << ')' << '\n';
 
         std::exit(0);
+      } else if (flag(arg, "-h", "--help")) {
+        std::cout << help_text << std::endl;
+        std::exit(0);
       } else if (flag(arg, "-V", "--verbose")) {
+        cfg.flags |= config_flags::verbose;
+      } else if (flag(arg, "-j", "--jit-off")) {
+        cfg.flags &= ~config_flags::jit;
+      } else if (flag(arg, "-e", "--execute")) {
+        cfg.flags &= ~config_flags::file;
       }
+    } else {
+        for (; i < argc; ++i) cfg.args.push_back(argv[i]);
+        break;
     }
   }
 

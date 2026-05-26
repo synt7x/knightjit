@@ -8,10 +8,10 @@ namespace cli {
 
 enum config_flags : uint32_t {
   none = 0,
-  verbosee = 1 << 0,
+  verbose = 1 << 0,
   jit = 1 << 1,
   file = 1 << 2,
-  ir = 1 << 3,
+  debug = 1 << 3,
 };
 
 constexpr config_flags operator|(config_flags lhs, config_flags rhs) {
@@ -41,8 +41,9 @@ inline config_flags &operator&=(config_flags &lhs, config_flags rhs) {
 inline constexpr std::string_view help_text =
     "Usage: knightjit [options] <input_file>\n"
     "Options:\n"
-    "  -v, --verbose        Enable verbose output\n"
+    "  -v, --version        Show version information\n"
     "  -h, --help           Show this help message\n"
+    "  -V, --verbose        Enable verbose output\n"
     "  -e, --execute        Execute a string of Knight code\n"
     "  -j, --jit-off        Disable JIT compilation\n";
 
