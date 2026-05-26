@@ -15,13 +15,11 @@ rule("dynasm")
         import("utils.progress")
 
         local dynasm = target:pkg("dynasm")
-        assert(dynasm, "dynasm package not found")
-
         local lua = target:pkg("minilua") and path.join(target:pkg("minilua"):installdir(), "bin/minilua") or "lua"
 
         local dynasm_lua = path.join(dynasm:installdir(), "include/dynasm/dynasm.lua")
 
-        local outdir = path.join(target:targetdir(), "gen")
+        local outdir = path.join(target:targetdir(), "../gen")
         os.mkdir(outdir)
 
         local outfile = path.join(outdir, path.basename(sourcefile) .. ".cpp")

@@ -1,5 +1,4 @@
 local VERSION = "0.1.0"
-local HASH = os.iorun("git rev-parse --short HEAD")
 
 add_rules("mode.debug", "mode.release")
 
@@ -19,15 +18,20 @@ target("knight")
     add_files("src/**.cpp")
     add_files("src/**.dpp")
 
-    add_files("build/gen/*.cpp")
-    add_includedirs("build/gen", { public = true })
+    add_files("$(builddir)/gen/*.cpp")
+    add_includedirs("$(builddir)/gen", { public = true })
 
-    add_configfiles("src/knight.hpp.in", {
-        variables = {
-            VERSION = VERSION,
-            GIT_HASH = GIT_HASH
-        }
-    })
+    on_load(function(target)
+        target:add("defines", "KNIGHT_LIB")
+        target:add("defines", 'KNIGHT_VERSION="' .. VERSION .. '"')
+        target:add("defines", 'KNIGHT_GIT_HASH="' .. os.iorunv("git", {
+            "rev-parse",
+            "--short",
+            "HEAD"
+        }):trim() .. '"')
+    end)
 
     add_packages("mph", "dynasm", "minilua")
     set_optimize("fastest")
+
+    set_targetdir("$(builddir)/bin")
