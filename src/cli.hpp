@@ -45,7 +45,7 @@ inline constexpr std::string_view help_text =
     "  -h, --help           Show this help message\n"
     "  -V, --verbose        Enable verbose output\n"
     "  -e, --execute        Execute a string of Knight code\n"
-    "  -j, --jit-off        Disable JIT compilation\n";
+    "  -j, --jit-off        Disable JIT compilation";
 
 struct config {
   uint32_t flags = config_flags::jit | config_flags::file;

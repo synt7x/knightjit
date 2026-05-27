@@ -5,13 +5,12 @@ add_rules("mode.debug", "mode.release")
 set_version("0.1.0")
 
 includes("packages/dynasm")
-includes("packages/mph")
 includes("packages/minilua")
 
-add_requires("mph", "dynasm", "minilua")
+add_requires("dynasm", "minilua")
 
 target("knight")
-    set_languages("c++17")
+    set_languages("c++23")
     set_kind("binary")
     add_rules("dynasm")
 
@@ -31,7 +30,7 @@ target("knight")
         }):trim() .. '"')
     end)
 
-    add_packages("mph", "dynasm", "minilua")
+    add_packages("dynasm", "minilua")
     set_optimize("fastest")
 
     set_targetdir("$(builddir)/bin")
