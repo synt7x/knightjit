@@ -18,7 +18,7 @@ config parse(int argc, char **argv) {
   for (int i = 1; i < argc; i++) {
     std::string_view arg = argv[i];
 
-    if (cfg.input.empty()) {
+    if (cfg.args.empty()) {
       if (flag(arg, "-v", "--version")) {
         std::cout << knight::name << " v" << knight::version << " ("
                   << knight::git_hash << ')' << '\n';
@@ -28,15 +28,18 @@ config parse(int argc, char **argv) {
         std::cout << help_text << std::endl;
         std::exit(0);
       } else if (flag(arg, "-V", "--verbose")) {
-        cfg.flags |= config_flags::verbose;
+        cfg.flags |= flags::verbose;
       } else if (flag(arg, "-j", "--jit-off")) {
-        cfg.flags &= ~config_flags::jit;
+        cfg.flags &= ~flags::jit;
       } else if (flag(arg, "-e", "--execute")) {
-        cfg.flags &= ~config_flags::file;
+        cfg.flags &= ~flags::file;
+      } else {
+        cfg.args.push_back(argv[i]);
       }
     } else {
-        for (; i < argc; ++i) cfg.args.push_back(argv[i]);
-        break;
+      for (; i < argc; ++i)
+        cfg.args.push_back(argv[i]);
+      break;
     }
   }
 

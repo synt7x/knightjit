@@ -6,7 +6,7 @@
 
 namespace cli {
 
-enum config_flags : uint32_t {
+enum flags : uint32_t {
   none = 0,
   verbose = 1 << 0,
   jit = 1 << 1,
@@ -14,26 +14,26 @@ enum config_flags : uint32_t {
   debug = 1 << 3,
 };
 
-constexpr config_flags operator|(config_flags lhs, config_flags rhs) {
-  return static_cast<config_flags>(static_cast<uint32_t>(lhs) |
-                                   static_cast<uint32_t>(rhs));
+constexpr flags operator|(flags lhs, flags rhs) {
+  return static_cast<flags>(static_cast<uint32_t>(lhs) |
+                            static_cast<uint32_t>(rhs));
 }
 
-constexpr config_flags operator&(config_flags lhs, config_flags rhs) {
-  return static_cast<config_flags>(static_cast<uint32_t>(lhs) &
-                                   static_cast<uint32_t>(rhs));
+constexpr flags operator&(flags lhs, flags rhs) {
+  return static_cast<flags>(static_cast<uint32_t>(lhs) &
+                            static_cast<uint32_t>(rhs));
 }
 
-constexpr config_flags operator~(config_flags f) {
-  return static_cast<config_flags>(~static_cast<uint32_t>(f));
+constexpr flags operator~(flags f) {
+  return static_cast<flags>(~static_cast<uint32_t>(f));
 }
 
-inline config_flags &operator|=(config_flags &lhs, config_flags rhs) {
+inline flags &operator|=(flags &lhs, flags rhs) {
   lhs = lhs | rhs;
   return lhs;
 }
 
-inline config_flags &operator&=(config_flags &lhs, config_flags rhs) {
+inline flags &operator&=(flags &lhs, flags rhs) {
   lhs = lhs & rhs;
   return lhs;
 }
@@ -48,9 +48,7 @@ inline constexpr std::string_view help_text =
     "  -j, --jit-off        Disable JIT compilation";
 
 struct config {
-  uint32_t flags = config_flags::jit | config_flags::file;
-
-  std::string_view input;
+  uint32_t flags = flags::jit | flags::file;
   std::vector<std::string_view> args;
 };
 

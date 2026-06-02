@@ -1,5 +1,3 @@
 #include "gc.hpp"
 
-class gc {
-    
-};
+class gc {};
