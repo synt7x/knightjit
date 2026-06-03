@@ -214,8 +214,8 @@ opt_liveness_t* ir_preserve(ir_function_t* function, opt_liveness_t* tracked) {
                             save->generic.operands[0] = pre->result;
                             restore->generic.operands[0] = pre->result;
                         } else {
-                            save->generic.operands = arena_realloc(function->arena, save->generic.operands, sizeof(ir_id_t) * save->generic.operand_count + 1);
-                            restore->generic.operands = arena_realloc(function->arena, restore->generic.operands, sizeof(ir_id_t) * restore->generic.operand_count + 1);
+                            save->generic.operands = arena_realloc(function->arena, save->generic.operands, sizeof(ir_id_t) * (save->generic.operand_count + 1));
+                            restore->generic.operands = arena_realloc(function->arena, restore->generic.operands, sizeof(ir_id_t) * (restore->generic.operand_count + 1));
                         
                             save->generic.operands[save->generic.operand_count] = pre->result;
                             restore->generic.operands[restore->generic.operand_count] = pre->result;
