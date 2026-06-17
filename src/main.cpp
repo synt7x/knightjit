@@ -18,7 +18,7 @@ int execute(std::string_view input) {
 int main(int argc, char **argv) {
   cli::config cfg = cli::parse(argc, argv);
 
-  if (cfg.flags & cli::flags::file) {
+  if (cfg.has(cli::flags::file)) {
     for (std::string_view name : cfg.args) {
       if (!file::exists(name))
         frog::croak(frog::level::error, frog::message::unavailable_file, name);

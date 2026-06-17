@@ -39,9 +39,9 @@ position get_position(std::string_view src, diagnostic dg) {
     }
   }
 
-  return {
-      .line = line,
-      .column = column,
+  return position {
+      line,
+      column,
   };
 }
 

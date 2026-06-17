@@ -5,6 +5,7 @@ build/
 # MacOS Cache
 .DS_Store
 
+.jj
 
 .vscode/
 .idea/

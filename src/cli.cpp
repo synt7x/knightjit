@@ -5,8 +5,6 @@
 
 namespace cli {
 
-#define flag(arg, s, l) arg == s || arg == l
-
 config parse(int argc, char **argv) {
   config cfg;
 
@@ -28,17 +26,17 @@ config parse(int argc, char **argv) {
         std::cout << help_text << std::endl;
         std::exit(0);
       } else if (flag(arg, "-V", "--verbose")) {
-        cfg.flags |= flags::verbose;
+        cfg.put(flags::verbose);
       } else if (flag(arg, "-j", "--jit-off")) {
-        cfg.flags &= ~flags::jit;
+        cfg.remove(flags::jit);
       } else if (flag(arg, "-e", "--execute")) {
-        cfg.flags &= ~flags::file;
+        cfg.remove(flags::file);
       } else {
-        cfg.args.push_back(argv[i]);
+        cfg.push(argv[i]);
       }
     } else {
       for (; i < argc; ++i)
-        cfg.args.push_back(argv[i]);
+        cfg.push(argv[i]);
       break;
     }
   }

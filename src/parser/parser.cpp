@@ -1,3 +1,4 @@
 #include "parser.hpp"
 
-parser::parser(lexer l) : lex(l) {}
+#include "../vm/arena.hpp"
+

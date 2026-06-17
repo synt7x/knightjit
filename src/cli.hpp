@@ -14,28 +14,8 @@ enum flags : uint32_t {
   debug = 1 << 3,
 };
 
-constexpr flags operator|(flags lhs, flags rhs) {
-  return static_cast<flags>(static_cast<uint32_t>(lhs) |
-                            static_cast<uint32_t>(rhs));
-}
-
-constexpr flags operator&(flags lhs, flags rhs) {
-  return static_cast<flags>(static_cast<uint32_t>(lhs) &
-                            static_cast<uint32_t>(rhs));
-}
-
-constexpr flags operator~(flags f) {
-  return static_cast<flags>(~static_cast<uint32_t>(f));
-}
-
-inline flags &operator|=(flags &lhs, flags rhs) {
-  lhs = lhs | rhs;
-  return lhs;
-}
-
-inline flags &operator&=(flags &lhs, flags rhs) {
-  lhs = lhs & rhs;
-  return lhs;
+inline constexpr bool flag(std::string_view arg, std::string_view s, std::string_view l) {
+  return arg == s || arg == l;
 }
 
 inline constexpr std::string_view help_text =
@@ -47,9 +27,17 @@ inline constexpr std::string_view help_text =
     "  -e, --execute        Execute a string of Knight code\n"
     "  -j, --jit-off        Disable JIT compilation";
 
-struct config {
+class config {
+public:
   uint32_t flags = flags::jit | flags::file;
   std::vector<std::string_view> args;
+
+  config() = default;
+
+  void put(cli::flags flag) { flags |= flag; }
+  void remove(cli::flags flag) { flags &= ~flag; }
+  bool has(cli::flags flag) const { return (flags & flag) != 0; }
+  void push(std::string_view arg) { args.push_back(arg); }
 };
 
 config parse(int argc, char **argv);

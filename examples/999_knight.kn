@@ -44,8 +44,6 @@
 	: tmp
 )
 
-
-
 ; = to_integer BLOCK (
 	; & CALL is_runnable : = value CALL run
 	: +0[]value # `[]value` will unbox the second element of `value`.
