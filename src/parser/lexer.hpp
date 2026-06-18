@@ -9,12 +9,6 @@
  */
 class lexer {
 private:
-  /// @brief The source string being lexed, stored as a non-owning view for efficiency.
-  std::string_view src;
-
-  /// @brief Length of the source string, used for bounds checking.
-  uint32_t length;
-
   /// @brief Current index in the source string, used for lexing.
   uint32_t idx = 0;
 
@@ -28,6 +22,12 @@ public:
    * @note Use as a pull-based lexer, continually calling `consume()` until `is_eof()` returns `true`.
    */
   lexer(std::string_view source);
+
+  /// @brief The source string being lexed, stored as a non-owning view for efficiency.
+  std::string_view src;
+
+  /// @brief Length of the source string, used for bounds checking.
+  uint32_t length;
 
   /**
    * @brief Token type of a token or AST node.

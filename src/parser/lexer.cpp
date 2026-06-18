@@ -6,6 +6,8 @@
 #include <string_view>
 #include <limits>
 
+#include <iostream>
+
 lexer::lexer(std::string_view source) : src(source) {
   /*
    * Prevent overflow of the length field,

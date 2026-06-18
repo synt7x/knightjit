@@ -7,10 +7,13 @@
 #include "parser/parser.hpp"
 
 #include <string>
+#include <iostream>
 
 int execute(std::string_view input) {
   lexer lex(input);
   parser parse(lex);
+
+  parser::ast ast = parse.parse();
 
   return 0;
 }

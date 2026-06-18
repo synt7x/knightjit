@@ -20,7 +20,7 @@ public:
    * @param l A `lexer` instance referring to the source string
    * @note Builds an AST following a single call of `parse()`
    */
-  parser(lexer l) : lex(l), nodes() {}
+  parser(lexer& l) : lex(l), nodes() {}
 
   /// @brief An alias for indexing nodes
   using node_id = vm::arena_id;
@@ -49,15 +49,22 @@ public:
   ast parse();
 private:
   /// @brief The lexer instance used to tokenize the input.
-  lexer lex;
+  lexer& lex;
 
   /// @brief The arena allocator used to store the AST
-  const vm::arena<node> nodes;
+  vm::arena<node> nodes;
+
+  /**
+   * @brief Parses a single n-arity expression
+   * 
+   * @return `node_id` of the resultant `node`
+   */
+  node_id expression();
 
   /**
    * @brief Parses a single nullary expression.
    * 
-   * @return The resultant `node`
+   * @return `node_id` of the resultant `node`
    */
   [[nodiscard]]
   node_id nullary();
@@ -65,7 +72,7 @@ private:
   /**
    * @brief Parses a single unary expression.
    * 
-   * @return The resultant `node`
+   * @return `node_id` of the resultant `node`
    */
   [[nodiscard]]
   node_id unary();
@@ -73,7 +80,7 @@ private:
   /**
    * @brief Parses a single binary expression.
    * 
-   * @return The resultant `node`
+   * @return `node_id` of the resultant `node`
    */
   [[nodiscard]]
   node_id binary();
@@ -81,16 +88,16 @@ private:
   /**
    * @brief Parses a single ternary expression.
    * 
-   * @return The resultant `node`
+   * @return `node_id` of the resultant `node`
    */
   [[nodiscard]]
   node_id ternary();
 
   /**
-   * @brief Parses a single quarternary expression.
+   * @brief Parses a single quaternary expression.
    * 
-   * @return The resultant `node`
+   * @return `node_id` of the resultant `node`
    */
   [[nodiscard]]
-  node_id quarternary();
+  node_id quaternary();
 };
