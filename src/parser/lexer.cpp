@@ -2,6 +2,8 @@
 
 #include "../logs/frog.hpp"
 
+#include <cstdint>
+#include <string_view>
 #include <limits>
 
 lexer::lexer(std::string_view source) : src(source) {
@@ -61,10 +63,15 @@ token lexer::bounds(uint32_t start, node_type type) const {
 void lexer::skip() {
   while (idx < length) {
     switch (src[idx]) {
-      // Skip whitespace characters
+      /*
+       * Skip whitespace characters, note
+       * that `:(){}` characters are also
+       * considered whitespace in Knight.
+       */
       case ' ': case ':': case '(': case ')':
       case '{': case '}': case '\r': case '\t':
         idx++; break;
+      // Skip newlines, whilst counting
       case '\n': line++; idx++; break;
       // Skip comments
       case '#': while (!lexer::is_eof() && src[idx] != '\n') idx++; break;
@@ -180,8 +187,11 @@ token lexer::string() {
    * incrementing the index. It does not matter
    * if the quote was missing, as bounds are checked
    * at the beginning of every `consume()` call.
+   * 
+   * But we must ensure that we have not reached the
+   * end of file to prevent idx from overflowing.
    */
-  idx++;
+  if (!lexer::is_eof()) idx++;
 
   return result;
 }
@@ -256,15 +266,15 @@ token lexer::consume() {
 
 token lexer::peek() {
   // Store the current state
-  uint32_t jdx = idx;
-  uint32_t jine = line;
+  uint32_t prev_idx = idx;
+  uint32_t prev_line = line;
 
   // Read token
   token t = lexer::consume();
 
   // Restore lexer state
-  idx = jdx;
-  line = jine;
+  idx = prev_idx;
+  line = prev_line;
   return t;
 }
 
