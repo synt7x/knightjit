@@ -114,7 +114,7 @@ struct diagnostic {
  * @param `token` contained in the source string
  * @return raw `span` that contains the start and length
  */
-static inline span token_to_span(token tk) {
+static inline span token_to_span(lexer::token tk) {
   return { tk.start, tk.length };
 }
 
