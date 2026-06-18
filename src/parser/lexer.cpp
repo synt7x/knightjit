@@ -27,7 +27,7 @@ lexer::lexer(std::string_view source) : src(source) {
   length = static_cast<uint32_t>(source.size());
 }
 
-token lexer::bounds(uint32_t start, node_type type) {
+token lexer::bounds(uint32_t start, node_type type) const {
   /*
    * The length of the token must fit
    * within the 16 bit unsigned integer
@@ -54,7 +54,7 @@ token lexer::bounds(uint32_t start, node_type type) {
 
   // Create a new token with the given length and type
   return {
-      start, (uint16_t) (idx - start), type,
+      start, static_cast<uint16_t>(idx - start), type,
   };
 }
 
@@ -67,7 +67,7 @@ void lexer::skip() {
         idx++; break;
       case '\n': line++; idx++; break;
       // Skip comments
-      case '#': while (src[idx] != '\n') idx++; break;
+      case '#': while (!lexer::is_eof() && src[idx] != '\n') idx++; break;
       default: return;
     }
   }
@@ -77,8 +77,8 @@ token lexer::identifier() {
   uint32_t start = idx;
 
   // Consume all lowercase letters, digits, and underscores
-  while (!lexer::is_eof() && (src[idx] >= 'a' && src[idx] <= 'z') ||
-         (src[idx] >= '0' && src[idx] <= '9') || src[idx] == '_')
+  while (!lexer::is_eof() && ((src[idx] >= 'a' && src[idx] <= 'z') ||
+         (src[idx] >= '0' && src[idx] <= '9') || src[idx] == '_'))
     idx++;
 
   /*
@@ -167,7 +167,7 @@ token lexer::string() {
   while (!lexer::is_eof() && src[idx] != delim) idx++;
   token result = lexer::bounds(start, node_type::STRING);
 
-  if (src[idx] != delim) {
+  if (lexer::is_eof() || src[idx] != delim) {
     frog::croak(src, frog::diagnostic {
       frog::level::warning,
       frog::message::unterminated_string,
@@ -186,7 +186,7 @@ token lexer::string() {
   return result;
 }
 
-node_type lexer::operation() {
+node_type lexer::operation() const {
   switch (src[idx]) {
     case '@': return node_type::ARRAY;
     case '!': return node_type::NOT;
@@ -257,13 +257,15 @@ token lexer::consume() {
 token lexer::peek() {
   // Store the current state
   uint32_t jdx = idx;
+  uint32_t jine = line;
 
   // Read token
   token t = lexer::consume();
 
   // Restore lexer state
   idx = jdx;
+  line = jine;
   return t;
 }
 
-const bool lexer::is_eof() { return idx >= length; }
+bool lexer::is_eof() const { return idx >= length; }

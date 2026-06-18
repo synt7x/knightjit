@@ -79,7 +79,7 @@ public:
    * @return `true` if the end of the source string has been reached,
    * @return `false` otherwise.
    */
-  const bool is_eof();
+  bool is_eof() const;
 
 private:
   /**
@@ -89,7 +89,7 @@ private:
    * @param type Type of the token
    * @return `token`
    */
-  token bounds(uint32_t start, node_type type);
+  token bounds(uint32_t start, node_type type) const;
 
   /**
    * @brief Skips whitespace and comments in the input
@@ -139,7 +139,7 @@ private:
    * @return The type of the next operator token,
    * or `node_type::NONE` if the next token is not an operator.
    */
-  node_type operation();
+  node_type operation() const;
 };
 
 /*
