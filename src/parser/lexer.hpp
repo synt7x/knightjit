@@ -4,30 +4,6 @@
 #include <string_view>
 
 /**
- * @brief Node type of a token or AST node.
- */
-enum class node_type : uint8_t {
-  NONE, ERROR, STRING, NUMBER, VARIABLE,
-  TRUE, FALSE, NIL, BLOCK, ARRAY,
-  PROMPT, RANDOM, CALL, QUIT, DUMP,
-  OUTPUT, LENGTH, NOT, NEGATE, ASCII,
-  BOX, HEAD, TAIL, ADD, SUBTRACT,
-  MULTIPLY, DIVIDE, MOD, POWER, GREATER,
-  LESS, COMPARE, AND, OR, EXPR,
-  EQUAL, WHILE, IF, GET, SET, ARGS
-};
-
-/**
- * @brief A token produced by the lexer.
- */
-struct token {
-  uint32_t start = 0;
-  uint16_t length = 0;
-  node_type type = node_type::NONE;
-};
-
-
-/**
  * @brief A pull-based lexer that produces tokens from an input source string.
  * @note Continually call `consume()` until `is_eof()` returns `true`.
  */
@@ -54,11 +30,35 @@ public:
   lexer(std::string_view source);
 
   /**
+   * @brief Token type of a token or AST node.
+   */
+  enum class token_type : uint8_t {
+    NONE, ERROR, STRING, NUMBER, VARIABLE,
+    TRUE, FALSE, NIL, BLOCK, ARRAY,
+    PROMPT, RANDOM, CALL, QUIT, DUMP,
+    OUTPUT, LENGTH, NOT, NEGATE, ASCII,
+    BOX, HEAD, TAIL, ADD, SUBTRACT,
+    MULTIPLY, DIVIDE, MOD, POWER, GREATER,
+    LESS, COMPARE, AND, OR, EXPR,
+    EQUAL, WHILE, IF, GET, SET, ARGS
+  };
+
+
+  /**
+   * @brief A token produced by the lexer.
+   */
+  struct token {
+    uint32_t start = 0;
+    uint16_t length = 0;
+    token_type type = token_type::NONE;
+  };
+
+  /**
    * @brief Consume and return the next token from the input source.
    *
    * @return The next `token` from the source string,
-   * `node_type::ERROR` if an unexpected token is encountered,
-   * or `node_type::NONE` if the end of the source string is reached.
+   * `token_type::ERROR` if an unexpected token is encountered,
+   * or `token_type::NONE` if the end of the source string is reached.
   */
   [[nodiscard]]
   token consume();
@@ -67,8 +67,8 @@ public:
    * @brief Peek at the next token without consuming it.
    *
    * @return The next `token` from the source string,
-   * `node_type::ERROR` if an unexpected token is encountered,
-   * or `node_type::NONE` if the end of the source string is reached.
+   * `token_type::ERROR` if an unexpected token is encountered,
+   * or `token_type::NONE` if the end of the source string is reached.
    */
   [[nodiscard]]
   token peek();
@@ -89,7 +89,7 @@ private:
    * @param type Type of the token
    * @return `token`
    */
-  token bounds(uint32_t start, node_type type) const;
+  token bounds(uint32_t start, token_type type) const;
 
   /**
    * @brief Skips whitespace and comments in the input
@@ -102,7 +102,7 @@ private:
    * @brief Builds an identifier token from the input source string,
    * starting at the current index.
    * 
-   * @return `token` of type `node_type::VARIABLE` or `node_type::ARGS`
+   * @return `token` of type `token_type::VARIABLE` or `token_type::ARGS`
    * if the identifier is `_`.
    */
   token identifier();
@@ -120,7 +120,7 @@ private:
    * @brief Builds a number token from the input source string,
    * starting at the current index.
    * 
-   * @return `token` of type `node_type::NUMBER`
+   * @return `token` of type `token_type::NUMBER`
    */
   token number();
 
@@ -129,7 +129,7 @@ private:
    * starting at the current index. String literals are enclosed in
    * either single or double quotes.
    * 
-   * @return `token` of type `node_type::STRING`
+   * @return `token` of type `token_type::STRING`
    */
   token string();
 
@@ -139,7 +139,7 @@ private:
    * @return The type of the next operator token,
    * or `node_type::NONE` if the next token is not an operator.
    */
-  node_type operation() const;
+  token_type operation() const;
 };
 
 /*
@@ -155,4 +155,4 @@ private:
  * and in the case the user wants a long string,
  * they can split it into multiple string literals.
  */
-static_assert(sizeof(token) == 8);
+static_assert(sizeof(lexer::token) == 8);

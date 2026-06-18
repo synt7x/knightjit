@@ -2,23 +2,10 @@
 
 #include <vector>
 
+#include "../vm/arena.hpp"
 #include "../logs/frog.hpp"
 
 #include "lexer.hpp"
-
-/**
- * @brief An AST node, representing a single token
- * and its children in the tree.
- */
-struct node {
-  node_type type;
-  frog::span range;
-  std::vector<node> children;
-};
-
-
-/// @brief An alias for the root node of the AST.
-using ast = node;
 
 /**
  * @brief A parser that builds an AST from
@@ -33,7 +20,26 @@ public:
    * @param l A `lexer` instance referring to the source string
    * @note Builds an AST following a single call of `parse()`
    */
-  parser(lexer l) : lex(l), allocator() {}
+  parser(lexer l) : lex(l), nodes() {}
+
+  /// @brief An alias for indexing nodes
+  using node_id = vm::arena_id;
+
+  /// @brief An alias for the type of nodes
+  using node_type = lexer::token_type;
+
+  /**
+   * @brief An AST node, representing a single token
+   * and its children in the tree.
+   */
+  struct node {
+    node_type type;
+    frog::span range;
+    std::vector<node_id> children;
+  };
+
+  /// @brief An alias for the root node of the AST.
+  using ast = node;
 
   /**
    * @brief Parses the input source string and builds an AST. 
@@ -46,40 +52,45 @@ private:
   lexer lex;
 
   /// @brief The arena allocator used to store the AST
-  arena allocator;
+  const vm::arena<node> nodes;
 
   /**
    * @brief Parses a single nullary expression.
    * 
    * @return The resultant `node`
    */
-  node nullary();
+  [[nodiscard]]
+  node_id nullary();
 
   /**
    * @brief Parses a single unary expression.
    * 
    * @return The resultant `node`
    */
-  node unary();
+  [[nodiscard]]
+  node_id unary();
 
   /**
    * @brief Parses a single binary expression.
    * 
    * @return The resultant `node`
    */
-  node binary();
+  [[nodiscard]]
+  node_id binary();
 
   /**
    * @brief Parses a single ternary expression.
    * 
    * @return The resultant `node`
    */
-  node ternary();
+  [[nodiscard]]
+  node_id ternary();
 
   /**
    * @brief Parses a single quarternary expression.
    * 
    * @return The resultant `node`
    */
-  node quarternary();
+  [[nodiscard]]
+  node_id quarternary();
 };
