@@ -142,7 +142,7 @@ private:
   node_type operation();
 };
 
-/**
+/*
  * Keep token sizes within a 64 bit integer,
  * specifically for efficiency purposes.
  *

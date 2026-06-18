@@ -5,6 +5,18 @@
 #include <limits>
 
 lexer::lexer(std::string_view source) : src(source) {
+  /*
+   * Prevent overflow of the length field,
+   * which is an unsigned 32 bit integer.
+   * 
+   * This allows tokens to fit within
+   * 8 bytes, which is more efficient for
+   * storage and copying purposes.
+   * 
+   * For a more in-depth explanation,
+   * refer to the comment on the `token`
+   * struct in `lexer.hpp`.
+   */
   if (source.size() > std::numeric_limits<uint32_t>::max()) {
     frog::croak(src, frog::diagnostic {
       frog::level::panic,
@@ -18,9 +30,7 @@ lexer::lexer(std::string_view source) : src(source) {
 token lexer::bounds(uint32_t start, node_type type) {
   if (idx - start > std::numeric_limits<uint16_t>::max()) {
     token err {
-        start,
-        1,
-        node_type::ERROR,
+        start, 1, node_type::ERROR,
     };
 
     frog::croak(src, frog::diagnostic {
@@ -57,10 +67,16 @@ void lexer::skip() {
 token lexer::identifier() {
   uint32_t start = idx;
 
+  // Consume all lowercase letters, digits, and underscores
   while (!lexer::is_eof() && (src[idx] >= 'a' && src[idx] <= 'z') ||
          (src[idx] >= '0' && src[idx] <= '9') || src[idx] == '_')
     idx++;
 
+  /*
+   * If the identifier is just `_`,
+   * lex it as an `ARGS` token. Otherwise,
+   * it is an identifier.
+   */
   return lexer::bounds(
     start,
     src[start] == '_' && (idx == start + 1)
@@ -71,6 +87,18 @@ token lexer::identifier() {
 token lexer::builtin() {
   uint32_t start = idx;
 
+  /* Builtin tokens are all uppercase, and
+   * are only determined using the first character.
+   *
+   * Builtin calls can be any string containing
+   * uppercase letters and underscores, but the
+   * lexer only distinguishes them based on the
+   * first character.
+   * 
+   * e.g. `N` is the same as `NULL` is the same
+   * as `NUMBER`, and all are lexed as
+   * `node_type::NIL`.
+   */
   node_type type;
   switch (src[idx]) {
     case 'A': type = node_type::ASCII; break;
@@ -92,8 +120,8 @@ token lexer::builtin() {
     default: type = node_type::ERROR; break;
   }
 
-  while (!lexer::is_eof() && (src[idx] >= 'A' && src[idx] <= 'Z') ||
-         src[idx] == '_')
+  while (!lexer::is_eof() && ((src[idx] >= 'A' && src[idx] <= 'Z') ||
+         src[idx] == '_'))
     idx++;
 
   token result = lexer::bounds(start, type);
@@ -121,6 +149,12 @@ token lexer::string() {
   char delim = src[idx];
   uint32_t start = ++idx;
 
+  /*
+   * Consume all characters until reaching the
+   * closing quote character. Knight does not
+   * support escape sequences, so any matching
+   * quote character will close the string.
+   */
   while (!lexer::is_eof() && src[idx] != delim) idx++;
   token result = lexer::bounds(start, node_type::STRING);
 
@@ -132,6 +166,12 @@ token lexer::string() {
     });
   }
 
+  /*
+   * Skip the remaining quote character by
+   * incrementing the index. It does not matter
+   * if the quote was missing, as bounds are checked
+   * at the beginning of every `consume()` call.
+   */
   idx++;
 
   return result;
@@ -165,48 +205,32 @@ node_type lexer::operation() {
 token lexer::consume() {
   lexer::skip();
 
-  if (idx >= length)
-    return token {
-        idx,
-        0,
-        node_type::NONE,
-    };
+  // Check initial bounds
+  if (is_eof()) return token { idx, 0, node_type::NONE };
 
-  if (src[idx] >= 'a' && src[idx] <= 'z' || src[idx] == '_') {
+  if (src[idx] >= 'a' && src[idx] <= 'z' || src[idx] == '_')
     return lexer::identifier();
-  }
 
-  if (src[idx] >= 'A' && src[idx] <= 'Z') {
-    return lexer::builtin();
-  }
+  if (src[idx] >= 'A' && src[idx] <= 'Z') return lexer::builtin();
+  if (src[idx] >= '0' && src[idx] <= '9') return lexer::number();
+  if (src[idx] == '\'' || src[idx] == '"') return lexer::string();
 
-  if (src[idx] >= '0' && src[idx] <= '9') {
-    return lexer::number();
-  }
-
-  if (src[idx] == '\'' || src[idx] == '"') {
-    return lexer::string();
-  }
-
+  /*
+   * Match an operator as a single character.
+   * See the implementation of `operation()`,
+   * which guarantees that the operator is a
+   * single character.
+   */ 
   node_type op = lexer::operation();
   if (op != node_type::NONE)
-    return token {
-        idx++,
-        1,
-        op,
-    };
+    return token { idx++, 1, op };
 
-  if (idx >= length)
-    return token {
-        idx,
-        0,
-        node_type::NONE,
-    };
+  // Check bounds one last time
+  if (is_eof()) return token { idx, 0, node_type::NONE };
 
+  // Unknown token found, raise an error
   token err {
-      idx,
-      1,
-      node_type::ERROR,
+      idx, 1, node_type::ERROR,
   };
 
   frog::croak(src, frog::diagnostic {
@@ -215,15 +239,20 @@ token lexer::consume() {
     frog::token_to_span(err),
   });
 
+  // Advance past bad character
   idx++;
 
   return err;
 }
 
 token lexer::peek() {
+  // Store the current state
   uint32_t jdx = idx;
+
+  // Read token
   token t = lexer::consume();
 
+  // Restore lexer state
   idx = jdx;
   return t;
 }
