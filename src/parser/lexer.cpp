@@ -201,7 +201,7 @@ lexer::token_type lexer::operation() const {
     case '@': return lexer::token_type::ARRAY;
     case '!': return lexer::token_type::NOT;
     case '~': return lexer::token_type::NEGATE;
-    case ',': return lexer::token_type::NOT;
+    case ',': return lexer::token_type::BOX;
     case '[': return lexer::token_type::HEAD;
     case ']': return lexer::token_type::TAIL;
     case '+': return lexer::token_type::ADD;
