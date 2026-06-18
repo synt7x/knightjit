@@ -28,6 +28,16 @@ lexer::lexer(std::string_view source) : src(source) {
 }
 
 token lexer::bounds(uint32_t start, node_type type) {
+  /*
+   * The length of the token must fit
+   * within the 16 bit unsigned integer
+   * `length` field of the `token` struct.
+   * 
+   * See the comment on the `token`
+   * struct in `lexer.hpp` for a more
+   * in-depth explanation of the size
+   * constraints.
+   */
   if (idx - start > std::numeric_limits<uint16_t>::max()) {
     token err {
         start, 1, node_type::ERROR,
@@ -42,10 +52,9 @@ token lexer::bounds(uint32_t start, node_type type) {
     return err;
   }
 
+  // Create a new token with the given length and type
   return {
-      start,
-      (uint16_t) (idx - start),
-      type,
+      start, (uint16_t) (idx - start), type,
   };
 }
 
