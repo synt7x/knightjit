@@ -137,7 +137,7 @@ private:
    * @brief Determine the nodetype of the next operator token.
    * 
    * @return The type of the next operator token,
-   * or `node_type::NONE` if the next token is not an operator.
+   * or `token_type::NONE` if the next token is not an operator.
    */
   token_type operation() const;
 };
