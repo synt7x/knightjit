@@ -1,4 +1,4 @@
-local VERSION = "0.1.1"
+local VERSION = "0.1.2"
 
 add_rules("mode.debug", "mode.release")
 

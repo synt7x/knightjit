@@ -111,7 +111,10 @@ parser::node_id parser::expression() {
                 frog::message::unexpected_token,
                 frog::token_to_span(token)
             });
+            break;
     }
+
+    failed = true;
 
     return nodes.create(node {
         node_type::ERROR,
@@ -129,6 +132,8 @@ parser::ast parser::parse() {
             frog::message::token_at_end,
             frog::span { lex.peek().start, lex.peek().length }
         });
+
+        failed = true;
     }
 
     return nodes.at(root);

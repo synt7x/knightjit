@@ -14,6 +14,7 @@ int execute(std::string_view input) {
   parser parse(lex);
 
   parser::ast ast = parse.parse();
+  if (parse.failed) return 1;
 
   return 0;
 }

@@ -41,6 +41,9 @@ public:
   /// @brief An alias for the root node of the AST.
   using ast = node;
 
+  /// @brief Flag indicating whether parsing failed due to an error.
+  bool failed = false;
+
   /**
    * @brief Parses the input source string and builds an AST. 
    * 
