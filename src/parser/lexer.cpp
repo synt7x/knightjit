@@ -206,7 +206,7 @@ token lexer::consume() {
   lexer::skip();
 
   // Check initial bounds
-  if (is_eof()) return token { idx, 0, node_type::NONE };
+  if (lexer::is_eof()) return token { idx, 0, node_type::NONE };
 
   if (src[idx] >= 'a' && src[idx] <= 'z' || src[idx] == '_')
     return lexer::identifier();
@@ -226,7 +226,7 @@ token lexer::consume() {
     return token { idx++, 1, op };
 
   // Check bounds one last time
-  if (is_eof()) return token { idx, 0, node_type::NONE };
+  if (lexer::is_eof()) return token { idx, 0, node_type::NONE };
 
   // Unknown token found, raise an error
   token err {
