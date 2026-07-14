@@ -69,7 +69,7 @@ public:
         std::construct_at(slot, std::forward<Args>(args)...);
         return last_idx++;
     }
-
+    
     /**
      * @brief Retrieves a reference to the node at the specified index
      * the reference will be valid until the arena is freed.
