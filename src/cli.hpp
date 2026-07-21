@@ -20,6 +20,7 @@ inline constexpr bool flag(std::string_view arg, std::string_view s, std::string
 
 inline constexpr std::string_view help_text =
     "Usage: knightjit [options] <input_file>\n"
+    "\n"
     "Options:\n"
     "  -v, --version        Show version information\n"
     "  -h, --help           Show this help message\n"

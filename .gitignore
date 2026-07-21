@@ -1,4 +1,5 @@
 target/
+docs/
 
 # MacOS Cache
 .DS_Store

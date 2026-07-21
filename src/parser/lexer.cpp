@@ -24,7 +24,8 @@ lexer::lexer(std::string_view source) : src(source) {
   if (source.size() > std::numeric_limits<uint32_t>::max()) {
     frog::croak(src, frog::diagnostic {
       frog::level::panic,
-      frog::message::input_too_large
+      frog::message::input_too_large,
+      frog::span {}
     });
   }
 
@@ -229,7 +230,7 @@ lexer::token lexer::consume() {
   // Check initial bounds
   if (lexer::is_eof()) return lexer::token { idx, 0, lexer::token_type::NONE };
 
-  if (src[idx] >= 'a' && src[idx] <= 'z' || src[idx] == '_')
+  if ((src[idx] >= 'a' && src[idx] <= 'z') || src[idx] == '_')
     return lexer::identifier();
 
   if (src[idx] >= 'A' && src[idx] <= 'Z') return lexer::builtin();

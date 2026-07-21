@@ -51,7 +51,14 @@ SHELL := cmd.exe
 .SHELLFLAGS := /c
 endif
 
-all: $(TARGET)/$(EXECUTABLE)
+GIT_HASH := $(shell git rev-parse --short HEAD)
+
+DEFINES := -DKNIGHT_VERSION=\"$(VERSION)\"
+DEFINES += -DKNIGHT_GIT_HASH=\"$(GIT_HASH)\"
+CFLAGS += $(DEFINES)
+
+all: build
+build: $(TARGET)/$(EXECUTABLE)
 
 $(TARGET)/$(EXECUTABLE): $(OBJECTS) | $(TARGET)
 	$(CC) $(CFLAGS) $^ -o $(TARGET)/$(EXECUTABLE) $(LDFLAGS)
@@ -80,4 +87,4 @@ $(ARTIFACTS):
 clean:
 	$(RM) target
 
-.PHONY: all clean
+.PHONY: all build clean
