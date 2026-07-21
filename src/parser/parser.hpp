@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "../vm/arena.hpp"
-#include "../logs/frog.hpp"
+#include "arena.hpp"
+#include "frog.hpp"
 
 #include "lexer.hpp"
 

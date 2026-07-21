@@ -1,10 +1,10 @@
 #include "cli.hpp"
 #include "file.hpp"
 
-#include "logs/frog.hpp"
+#include "frog.hpp"
 
-#include "parser/lexer.hpp"
-#include "parser/parser.hpp"
+#include "lexer.hpp"
+#include "parser.hpp"
 
 #include <string>
 #include <iostream>

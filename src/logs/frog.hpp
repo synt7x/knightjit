@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string_view>
 
-#include "../parser/lexer.hpp"
+#include "lexer.hpp"
 
 namespace frog {
 

@@ -1,6 +1,5 @@
 #include "parser.hpp"
-
-#include "../vm/arena.hpp"
+#include "arena.hpp"
 
 parser::node_id parser::nullary() {
     lexer::token token = lex.consume();

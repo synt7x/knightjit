@@ -1,6 +1,6 @@
 #include "lexer.hpp"
 
-#include "../logs/frog.hpp"
+#include "frog.hpp"
 
 #include <cstdint>
 #include <string_view>
