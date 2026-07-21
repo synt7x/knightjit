@@ -11,7 +11,7 @@ namespace debug {
 
 void inspect(lexer lex);
 void inspect(parser* parse);
-void inspect(parser::node node, parser* parse, uint32_t depth = 0);
+void inspect(parser* parse, parser::node node, uint32_t depth = 0);
 const std::string_view inspect(parser::node_type type);
 
 }

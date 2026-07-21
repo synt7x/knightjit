@@ -15,7 +15,7 @@ void inspect(parser* parse) {
 
 }
 
-void inspect(parser::node node, parser* parse, uint32_t depth) {
+void inspect(parser* parse, parser::node node, uint32_t depth) {
     std::cout << std::string(depth * 2, ' ') << inspect(node.type);
     if (node.type == parser::node_type::NUMBER) {
         std::cout << parse->lex.src.substr(node.range.start, node.range.length);
@@ -33,7 +33,7 @@ void inspect(parser::node node, parser* parse, uint32_t depth) {
 
     for (const auto &id : node.children) {
         parser::node child = parse->get(id);
-        inspect(child, parse, node.type == parser::node_type::EXPR ? depth : depth + 1);
+        inspect(parse, child, node.type == parser::node_type::EXPR ? depth : depth + 1);
     }
 }
 
