@@ -12,42 +12,57 @@ void inspect(lexer lex) {
 }
 
 void inspect(parser* parse) {
-
+    
 }
 
-void inspect(parser* parse, parser::node node, uint32_t depth) {
-    std::cout << std::string(depth * 2, ' ') << inspect(node.type);
-    if (node.type == parser::node_type::NUMBER) {
-        std::cout << parse->lex.src.substr(node.range.start, node.range.length);
-    } else if (node.type == parser::node_type::STRING) {
-        std::cout << "\"" << parse->lex.src.substr(node.range.start, node.range.length) << "\"";
-    } else if (node.type == parser::node_type::VARIABLE) {
-        std::cout << parse->lex.src.substr(node.range.start, node.range.length);
+void inspect(parser* parse, parser::node node, const std::string& prefix, bool last) {
+
+    std::cout << prefix;
+
+    if (!prefix.empty()) {
+        std::cout << (last ? "*- " : "|- ");
     }
 
-    if (node.type != parser::node_type::EXPR) {
-        std::cout << std::endl;
-    } else {
-        std::cout << " ";
+    std::cout << inspect(node.type);
+
+    switch (node.type) {
+        case parser::node_type::NUMBER:
+            std::cout << " " << parse->lex.src.substr(node.range.start, node.range.length);
+            break;
+        case parser::node_type::STRING:
+            std::cout << " \"" << parse->lex.src.substr(node.range.start, node.range.length) << "\"";
+            break;
+        case parser::node_type::VARIABLE:
+            std::cout << " " << parse->lex.src.substr(node.range.start, node.range.length);
+            break;
+        default:
+            break;
     }
 
-    for (const auto &id : node.children) {
-        parser::node child = parse->get(id);
-        inspect(parse, child, node.type == parser::node_type::EXPR ? depth : depth + 1);
+    std::cout << '\n';
+
+    for (size_t i = 0; i < node.children.size(); ++i) {
+        inspect(
+            parse,
+            parse->get(node.children[i]),
+            prefix + (last ? "   " : "|  "),
+            i == node.children.size() - 1
+        );
     }
 }
 
 const std::string_view inspect(parser::node_type type) {
     switch (type) {
-        case parser::node_type::VARIABLE: return "";
-        case parser::node_type::NUMBER: return "";
-        case parser::node_type::STRING: return "";
+        case parser::node_type::VARIABLE: return "VARIABLE";
+        case parser::node_type::NUMBER: return "NUMBER";
+        case parser::node_type::STRING: return "STRING";
 
         case parser::node_type::TRUE: return "true";
         case parser::node_type::FALSE: return "false";
         case parser::node_type::NIL: return "null";
         case parser::node_type::ARRAY: return "@";
 
+        case parser::node_type::EXPR: return ";";
 
         case parser::node_type::ADD: return "+";
         case parser::node_type::AND: return "&";
@@ -61,7 +76,6 @@ const std::string_view inspect(parser::node_type type) {
         case parser::node_type::DUMP: return "DUMP";
         case parser::node_type::EQUAL: return "=";
         case parser::node_type::ERROR: return "ERROR";
-        case parser::node_type::EXPR: return ";";
         case parser::node_type::GET: return "GET";
         case parser::node_type::GREATER: return ">";
         case parser::node_type::HEAD: return "HEAD";

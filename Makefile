@@ -1,5 +1,12 @@
 VERSION := 2.0.0
+SPEC := 3.0.0
 EXECUTABLE ?= knight
+
+STANDARD ?= EXTENSION
+
+ifeq ($(STANDARD), EXTENSION)
+SPEC := $(SPEC)+extension
+endif
 
 ARCH ?= x86_64
 CC := clang++
@@ -15,6 +22,7 @@ JANET ?= janet
 
 TARGET ?= target
 ARTIFACTS ?= $(TARGET)/artifacts
+VENDOR ?= $(ARTIFACTS)/vendor
 SRC ?= src
 
 ifeq ($(OS), Windows_NT)
@@ -51,10 +59,15 @@ SHELL := cmd.exe
 .SHELLFLAGS := /c
 endif
 
+ifeq (, $(shell $(WHICH) $(GIT)))
+	$(error "Git '$(GIT)' not found in PATH")
+endif
+
 GIT_HASH := $(shell git rev-parse --short HEAD)
 
 DEFINES := -DKNIGHT_VERSION=\"$(VERSION)\"
 DEFINES += -DKNIGHT_GIT_HASH=\"$(GIT_HASH)\"
+DEFINES += -DKNIGHT_SPEC=\"$(SPEC)\"
 CFLAGS += $(DEFINES)
 
 all: build

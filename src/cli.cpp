@@ -20,6 +20,7 @@ config parse(int argc, char **argv) {
       if (flag(arg, "-v", "--version")) {
         std::cout << knight::name << " v" << knight::version << " ("
                   << knight::git_hash << ')' << '\n';
+        std::cout << "Knight v" << knight::spec << '\n';
 
         std::exit(0);
       } else if (flag(arg, "-h", "--help")) {
