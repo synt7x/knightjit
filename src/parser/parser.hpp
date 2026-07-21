@@ -44,6 +44,19 @@ public:
   /// @brief Flag indicating whether parsing failed due to an error.
   bool failed = false;
 
+  /// @brief The lexer instance used to tokenize the input.
+  lexer& lex;
+
+  /**
+   * @brief Retrieves a node from the AST by its ID.
+   * 
+   * @param id The ID of the node to retrieve
+   * @return The node with the specified ID
+   */
+  node get(node_id id) {
+    return nodes.at(id);
+  }
+
   /**
    * @brief Parses the input source string and builds an AST. 
    * 
@@ -51,9 +64,6 @@ public:
    */
   ast parse();
 private:
-  /// @brief The lexer instance used to tokenize the input.
-  lexer& lex;
-
   /// @brief The arena allocator used to store the AST
   vm::arena<node> nodes;
 

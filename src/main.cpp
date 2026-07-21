@@ -5,6 +5,7 @@
 
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "debug.hpp"
 
 #include <string>
 #include <iostream>
@@ -15,6 +16,8 @@ int execute(std::string_view input) {
 
   parser::ast ast = parse.parse();
   if (parse.failed) return 1;
+
+  debug::inspect(ast, &parse);
 
   return 0;
 }
