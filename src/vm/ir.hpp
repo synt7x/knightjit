@@ -80,12 +80,33 @@ public:
     idx v3 : 16;
   };
 
+  /**
+   * @brief Extended form of an SSA instruction.
+   * 
+   * `e_anchor` is a 32-bit index into the extended instruction array
+   * associated with each IR block.
+   * 
+   * @note This form is used when the compact form is not sufficient.
+   * @note Flag value will always match `ir::flags::EXTENDED`.
+   */
   struct extended {
     flags flag : 2;
     opcode op : 6;
     idx e_anchor : 32;
   };
 
+  /**
+   * @brief Constant form of an SSA instruction.
+   * 
+   * `is_string` indicates whether the constant value is a string.
+   * `value` is the constant value itself.
+   * 
+   * `value` with either be a 61-bit integer or the top 61 bits of a
+   * pointer (e.g. a tagged pointer).
+   * 
+   * @note This form is used when the instruction's value is a constant.
+   * @note Flag value will always match `ir::flags::CONSTANT`.
+   */
   struct constant {
     /// @note Refers to `ir::flags`.
     uint64_t flag : 2;
