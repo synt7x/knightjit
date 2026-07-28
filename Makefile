@@ -37,6 +37,7 @@ SOURCES += $(wildcard $(SRC)/parser/*.cpp)
 SOURCES += $(wildcard $(SRC)/vm/*.cpp)
 
 INCLUDES := -I$(SRC)
+INCLUDES += -I$(SRC)/ir
 INCLUDES += -I$(SRC)/jit
 INCLUDES += -I$(SRC)/logs
 INCLUDES += -I$(SRC)/parser

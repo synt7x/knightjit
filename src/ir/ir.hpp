@@ -114,6 +114,13 @@ public:
     uint64_t value : 61;
   };
 
+  /**
+   * @brief An individual SSA instruction.
+   * 
+   * This is a union of the three possible forms of an SSA instruction.
+   * SSA instructions should fit within a single 64-bit word.
+   * 
+   */
   union instruction {
     compact compact;
     extended extended;
