@@ -2,15 +2,78 @@
 
 class ir {
 public:
+  /**
+   * @brief Type alias representing the maximum
+   * index into various IR related arrays.
+   * 
+   * Indexes for all arrays must fit into at
+   * most this value.
+   */
   using idx = uint32_t;
 
+  /**
+   * @brief Operation to be performed by a specific IR instruction.
+   */
   enum class opcode : idx {
+    /// @brief Panics with an error corresponding to `vm::error::error_name`.
     PANIC,
-    
+
+    /// @brief Performs no operation. This instruction is *never* compiled in JIT mode.
+    NOP,
+
+    /**
+     * @brief Addition operation, coerces the second argument to the first.
+     * 
+     * @note Type specific behavior:
+     * @note - int: Adds the second argument to the first.
+     * @note - string: Appends the second argument to the first.
+     * @note - array: Appends the second argument to the first.
+     * @note - bool: Results in `vm::error::add_boolean`.
+     * @note - null: Results in `vm::error::add_null`.
+     */
+    ADD,
+
+    /**
+     * @brief Subtraction operation, coerces the second argument to the first.
+     * 
+     * @note Type specific behavior:
+     * @note - int: Subtracts the second argument from the first.
+     * @note - string: Results in `vm::error::subtract_string`.
+     * @note - array: Results in `vm::error::subtract_array`.
+     * @note - bool: Results in `vm::error::subtract_boolean`.
+     * @note - null: Results in `vm::error::subtract_null`.
+     */
+    SUB,
   };
 
+  enum class flags {
+    COMPACT,
+    EXTENDED,
+    CONSTANT,
+  };
+
+  /**
+   * @brief Compact form of an SSA instruction.
+   * 
+   * `anchor` is a unsigned, negative offset from the current
+   * instruction referencing `v1`, the first argument of the
+   * instruction.
+   * 
+   * `anchor` may be signed if specified by the corresponding
+   * `opcode`. The offset represents the number
+   * of instructions preceding the current instruction.
+   * 
+   * `v2` and `v3` are signed 16-bit offsets from `anchor`,
+   * with a positive offset representing instructions above
+   * the anchor instruction.
+   * 
+   * Should `anchor`, `v1`, or `v2` not fit, you should use
+   * the extended instruction form.
+   * 
+   * @note Flag value will always match `ir::flags::COMPACT`.
+   */
   struct compact {
-    uint32_t flag : 2;
+    flags flag : 2;
     opcode op : 6;
     idx anchor : 24;
     idx v2 : 16;
@@ -18,12 +81,13 @@ public:
   };
 
   struct extended {
-    uint32_t flag : 2;
+    flags flag : 2;
     opcode op : 6;
     idx e_anchor : 32;
   };
 
-  struct raw {
+  struct constant {
+    /// @note Refers to `ir::flags`.
     uint64_t flag : 2;
     uint64_t is_string : 1;
     uint64_t value : 61;
@@ -32,13 +96,12 @@ public:
   union instruction {
     compact compact;
     extended extended;
-    raw raw;
+    constant constant;
   };
 
-private:
   static_assert(sizeof(compact) == 8);
   static_assert(sizeof(extended) == 8);
-  static_assert(sizeof(raw) == 8);
+  static_assert(sizeof(constant) == 8);
 
   static_assert(sizeof(instruction) == 8);
 };
