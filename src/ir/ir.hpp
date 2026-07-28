@@ -1,7 +1,22 @@
 #include <cstdint>
 
+#include "parser.hpp"
+
 class ir {
 public:
+  /**
+   * @brief Instance of the SSA IR, which builds an
+   * an array of instructions using the provided AST.
+   * 
+   * @param ast A `parser::ast` instance 
+   */
+  ir(parser::ast& ast) : ast(ast), instructions() {}
+
+  /**
+   * @brief The AST used to generate SSA instructions.
+   */
+  parser::ast& ast;
+
   /**
    * @brief Type alias representing the maximum
    * index into various IR related arrays.
@@ -119,13 +134,20 @@ public:
    * 
    * This is a union of the three possible forms of an SSA instruction.
    * SSA instructions should fit within a single 64-bit word.
-   * 
    */
   union instruction {
     compact compact;
     extended extended;
     constant constant;
   };
+
+  /**
+   * @brief The array of SSA instructions.
+   * 
+   * @note SSA blocks are simply spans over the
+   * continuous array of instructions.
+   */
+  std::vector<instruction> instructions;
 
   static_assert(sizeof(compact) == 8);
   static_assert(sizeof(extended) == 8);
