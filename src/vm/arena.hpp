@@ -20,8 +20,6 @@ using arena_id = std::size_t;
 template<typename T>
 class arena {
 public:
-    static_assert(alignof(T) <= alignof(std::max_align_t), "T must not be over-aligned");
-
     /**
      * @brief Construct a new arena object
      * 
@@ -128,6 +126,13 @@ public:
 
     /// @brief The vector of blocks allocated in the arena
     std::vector<block> blocks;
+
+    /*
+    * Special alignment of types is not allowed to be used
+    * in the arena. Allocated types must fit inside of CPU
+    * registers to guarantee performance.
+    */
+    static_assert(alignof(T) <= alignof(std::max_align_t), "T must not be over-aligned");
 };
 
 } // namespace vm
