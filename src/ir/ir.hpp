@@ -153,5 +153,6 @@ public:
   static_assert(sizeof(extended) == 8);
   static_assert(sizeof(constant) == 8);
 
+  // Ensure that instructions fit within 8 bytes.
   static_assert(sizeof(instruction) == 8);
 };
