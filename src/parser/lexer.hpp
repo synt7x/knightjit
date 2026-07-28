@@ -138,19 +138,19 @@ public:
    * or `token_type::NONE` if the next token is not an operator.
    */
   token_type operation() const;
-};
 
-/*
- * Keep token sizes within a 64 bit integer,
- * specifically for efficiency purposes.
- *
- * The `start` field is a 32 bit unsigned integer,
- * allowing for source strings up to 4 GB in size.
- * The `length` field is a 16 bit unsigned integer,
- * allowing for tokens up to 64 KB in size.
- *
- * Generally, having tokens larger than 64 KB is unlikely,
- * and in the case the user wants a long string,
- * they can split it into multiple string literals.
- */
-static_assert(sizeof(lexer::token) == 8);
+  /*
+  * Keep token sizes within a 64 bit integer,
+  * specifically for efficiency purposes.
+  *
+  * The `start` field is a 32 bit unsigned integer,
+  * allowing for source strings up to 4 GB in size.
+  * The `length` field is a 16 bit unsigned integer,
+  * allowing for tokens up to 64 KB in size.
+  *
+  * Generally, having tokens larger than 64 KB is unlikely,
+  * and in the case the user wants a long string,
+  * they can split it into multiple string literals.
+  */
+  static_assert(sizeof(lexer::token) == 8);
+};
