@@ -19,9 +19,9 @@ using arena_id = std::size_t;
  */
 template<typename T>
 class arena {
+public:
     static_assert(alignof(T) <= alignof(std::max_align_t), "T must not be over-aligned");
 
-public:
     /**
      * @brief Construct a new arena object
      * 
@@ -97,7 +97,7 @@ public:
 
         return blocks[block_idx].nodes[node_idx];
     }
-private:
+
     /**
      * @brief A block of nodes allocated in the arena
      */
