@@ -8,7 +8,7 @@
  * @note Continually call `consume()` until `is_eof()` returns `true`.
  */
 class lexer {
-private:
+public:
   /// @brief Current index in the source string, used for lexing.
   uint32_t idx = 0;
 
@@ -16,7 +16,6 @@ private:
   /// @note Zero-indexed, so the first line is line 0.
   uint32_t line = 0;
 
-public:
   /**
    * @brief Instance of the lexer, which produces tokens from an input source string.
    * @note Use as a pull-based lexer, continually calling `consume()` until `is_eof()` returns `true`.
@@ -81,7 +80,6 @@ public:
    */
   bool is_eof() const;
 
-private:
   /**
    * @brief Checks the bounds of a token, preventing overflow of the length field.
    * 
