@@ -63,7 +63,7 @@ public:
    * @return The root node of the AST
    */
   ast parse();
-private:
+
   /// @brief The arena allocator used to store the AST
   vm::arena<node> nodes;
 
