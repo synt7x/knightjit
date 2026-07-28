@@ -4,6 +4,10 @@
 
 #include "parser.hpp"
 
+/**
+ * @brief SSA based IR that is generated
+ * from an AST, which can be optimized.
+ */
 class ir {
 public:
   /**
@@ -151,6 +155,7 @@ public:
    */
   std::vector<instruction> instructions;
 
+  // Ensure that individual format fits within 8 bytes.
   static_assert(sizeof(compact) == 8);
   static_assert(sizeof(extended) == 8);
   static_assert(sizeof(constant) == 8);
