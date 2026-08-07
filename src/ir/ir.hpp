@@ -1,8 +1,12 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 #include "parser.hpp"
+#include "arena.hpp"
+#include "string.hpp"
+#include "array.hpp"
 
 /**
  * @brief SSA based IR that is generated
@@ -11,19 +15,6 @@
 class ir {
 public:
   /**
-   * @brief Instance of the SSA IR, which builds an
-   * an array of instructions using the provided AST.
-   * 
-   * @param ast A `parser::ast` instance 
-   */
-  ir(parser::ast& ast) : ast(ast), instructions() {}
-
-  /**
-   * @brief The AST used to generate SSA instructions.
-   */
-  parser::ast& ast;
-
-  /**
    * @brief Type alias representing the maximum
    * index into various IR related arrays.
    * 
@@ -31,6 +22,49 @@ public:
    * most this value.
    */
   using idx = uint32_t;
+
+  /**
+   * @brief Instance of the SSA IR, which builds an
+   * an array of instructions using the provided AST.
+   * 
+   * @param ast A `parser::ast` instance 
+   * @param nodes A `vm::arena<parser::node>` instance
+   */
+  ir(parser::ast& ast, vm::arena<parser::node>& nodes) : strings(), arrays(), nodes(nodes), instructions() {
+    generate(ast);
+  }
+
+  idx emit_constant(vm::string& str);
+  idx emit_constant(vm::array& arr);
+  idx emit_constant(int64_t num);
+
+  idx emit_string(frog::span range);
+  idx emit_number(frog::span range);
+
+  /**
+   * @brief Generates the SSA instructions from the
+   * provided AST node.
+   */
+  void generate(parser::node& node);
+
+  /**
+   * @brief A pool of strings allocated for the IR,
+   * will be cloned into the data section when generating 
+   * machine code.
+   */
+  vm::arena<vm::string> strings;
+
+  /**
+   * @brief A pool of arrays allocated for the IR,
+   * will be cloned into the data section when generating 
+   * machine code.
+   */
+  vm::arena<vm::array> arrays;
+
+  /**
+   * @brief The AST nodes used to generate SSA instructions.
+   */
+  vm::arena<parser::node>& nodes;
 
   /**
    * @brief Operation to be performed by a specific IR instruction.
@@ -133,6 +167,8 @@ public:
     uint64_t flag : 2;
     uint64_t is_string : 1;
     uint64_t value : 61;
+
+    constant(bool is_string, uintptr_t value) : flag(static_cast<uint64_t>(flags::CONSTANT)), is_string(is_string), value(value) {}
   };
 
   /**
@@ -154,6 +190,15 @@ public:
    * continuous array of instructions.
    */
   std::vector<instruction> instructions;
+
+  idx length() const {
+    return instructions.size();
+  }
+
+  idx emit(instruction instr) {
+    instructions.emplace_back(instr);
+    return length() - 1;
+  }
 
   // Ensure that individual format fits within 8 bytes.
   static_assert(sizeof(compact) == 8);

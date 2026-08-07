@@ -5,6 +5,7 @@
 
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "ir.hpp"
 #include "debug.hpp"
 
 #include <string>
@@ -12,10 +13,12 @@
 
 int execute(std::string_view input) {
   lexer lex(input);
-  parser parse(lex);
+  parser parser(lex);
 
-  parser::ast ast = parse.parse();
-  if (parse.failed) return 1;
+  parser::ast ast = parser.parse();
+  if (parser.failed) return 1;
+
+  ir ir(ast, parser.nodes);
 
   return 0;
 }

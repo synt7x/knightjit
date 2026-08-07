@@ -31,6 +31,7 @@ ifeq ($(OS), Windows_NT)
 endif
 
 SOURCES := $(wildcard $(SRC)/*.cpp)
+SOURCES += $(wildcard $(SRC)/ir/*.cpp)
 SOURCES += $(wildcard $(SRC)/jit/*.cpp)
 SOURCES += $(wildcard $(SRC)/logs/*.cpp)
 SOURCES += $(wildcard $(SRC)/parser/*.cpp)
@@ -78,6 +79,9 @@ $(TARGET)/$(EXECUTABLE): $(OBJECTS) | $(TARGET)
 	$(CC) $(CFLAGS) $^ -o $(TARGET)/$(EXECUTABLE) $(LDFLAGS)
 
 $(ARTIFACTS)/%.o: $(SRC)/%.cpp | $(ARTIFACTS)
+	$(CC) $(CFLAGS) -c $< -o $@ $(INCLUDES)
+
+$(ARTIFACTS)/%.o: $(SRC)/ir/%.cpp | $(ARTIFACTS)
 	$(CC) $(CFLAGS) -c $< -o $@ $(INCLUDES)
 
 $(ARTIFACTS)/%.o: $(SRC)/jit/%.cpp | $(ARTIFACTS)
