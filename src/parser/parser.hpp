@@ -47,6 +47,10 @@ public:
   /// @brief The lexer instance used to tokenize the input.
   lexer& lex;
 
+  std::string_view fetch(frog::span span) const {
+    return lex.src.substr(span.start, span.length);
+  }
+
   /**
    * @brief Retrieves a node from the AST by its ID.
    * 

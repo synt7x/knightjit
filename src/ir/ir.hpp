@@ -30,7 +30,7 @@ public:
    * @param ast A `parser::ast` instance 
    * @param nodes A `vm::arena<parser::node>` instance
    */
-  ir(parser::ast& ast, vm::arena<parser::node>& nodes) : strings(), arrays(), nodes(nodes), instructions() {
+  ir(parser::ast& ast, parser& parse) : strings(), arrays(), parser(parse), instructions() {
     generate(ast);
   }
 
@@ -52,7 +52,7 @@ public:
    * will be cloned into the data section when generating 
    * machine code.
    */
-  vm::arena<vm::string> strings;
+  std::vector<std::string_view> strings;
 
   /**
    * @brief A pool of arrays allocated for the IR,
@@ -64,7 +64,7 @@ public:
   /**
    * @brief The AST nodes used to generate SSA instructions.
    */
-  vm::arena<parser::node>& nodes;
+  parser& parser;
 
   /**
    * @brief Operation to be performed by a specific IR instruction.

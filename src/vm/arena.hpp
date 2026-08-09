@@ -1,15 +1,11 @@
 #pragma once
 
-#include <vector>
-#include <utility>
-#include <memory>
-#include <new>
-#include <cstddef>
+#include "bump.hpp"
 
 namespace vm {
 
 /// @brief Reference type for nodes allocated in the arena
-using arena_id = std::size_t;
+using arena_id = bump_id;
 
 /**
  * @brief A memory arena for allocating nodes of type `T`,
@@ -27,10 +23,7 @@ public:
      * @note The capacity must not be 0. If the capacity
      * is set to 0, it will be treated as 1.
      */
-    arena(arena_id cap = 512) : capacity(cap) {
-        if (capacity == 0) capacity = 1;
-        grow();
-    }
+    arena(arena_id cap = 512) : allocator(cap * sizeof(T)) {}
 
     /*
      * The arena is non-copyable, but movable.
@@ -44,9 +37,9 @@ public:
      * @brief Destroy the arena object
      */
     ~arena() {
-        for (auto& b : blocks) {
-            for (arena_id i = 0; i < b.size; i++) std::destroy_at(&b.nodes[i]);
-            operator delete[](b.nodes);
+        for (arena_id i = 0; i < last_idx; ++i) {
+            T* node = reinterpret_cast<T*>(allocator.at(i * sizeof(T)));
+            std::destroy_at(node);
         }
     }
 
@@ -60,10 +53,9 @@ public:
     template<typename... Args>
     [[nodiscard]]
     arena_id create(Args&&... args) {
-        if (blocks.back().size >= capacity) grow();
+        bump_id id = allocator.allocate(sizeof(T));
+        T* slot = reinterpret_cast<T*>(allocator.pointer_at(id));
 
-        block& b = blocks.back();
-        T* slot = &b.nodes[b.size++];
         std::construct_at(slot, std::forward<Args>(args)...);
         return last_idx++;
     }
@@ -78,10 +70,7 @@ public:
      */
     [[nodiscard]]
     T& at(arena_id index) {
-        arena_id block_idx = index / capacity;
-        arena_id node_idx = index % capacity;
-
-        return blocks[block_idx].nodes[node_idx];
+        return *reinterpret_cast<T*>(allocator.pointer_at(index * sizeof(T)));
     }
     
     /**
@@ -90,42 +79,16 @@ public:
      */
     [[nodiscard]]
     const T& at(arena_id index) const {
-        arena_id block_idx = index / capacity;
-        arena_id node_idx = index % capacity;
-
-        return blocks[block_idx].nodes[node_idx];
+        return *reinterpret_cast<const T*>(allocator.pointer_at(index * sizeof(T)));
     }
 
     /**
-     * @brief A block of nodes allocated in the arena
+     * @brief The bump allocator used to allocate memory for the arena.
      */
-    struct block {
-        /// @brief The array of nodes in the block
-        T* nodes;
-        
-        /// @brief The number of currently allocated nodes
-        arena_id size;
-    };
+    bump allocator;
 
     /// @brief Last index allocated in the arena
     arena_id last_idx = 0;
-
-    /// @brief The number of nodes to allocate per block
-    arena_id capacity;
-
-    /**
-     * @brief Grows the arena by allocating a new block
-     */
-    void grow() {
-        blocks.emplace_back();
-        auto& b = blocks.back();
-
-        b.nodes = static_cast<T*>(operator new[](capacity * sizeof(T)));
-        b.size = 0;
-    }
-
-    /// @brief The vector of blocks allocated in the arena
-    std::vector<block> blocks;
 
     /*
     * Special alignment of types is not allowed to be used

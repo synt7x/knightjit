@@ -2,12 +2,7 @@
 #include "parser.hpp"
 #include "arena.hpp"
 
-ir::idx ir::emit_constant(vm::string& str) {
-    instruction instr {};
-    instr.constant = constant(true, reinterpret_cast<uintptr_t>(&str));
-
-    return emit(instr);
-}
+#include <string_view>
 
 ir::idx ir::emit_constant(int64_t num) {
     instruction instr {};
@@ -19,6 +14,8 @@ ir::idx ir::emit_constant(int64_t num) {
 void ir::generate(parser::node& node) {
     switch (node.type) {
         case parser::node_type::STRING:
+            std::string_view str = parser.fetch(node.range);
+            strings.push_back(str);
             break;
     } 
 }
