@@ -46,7 +46,7 @@ public:
    * @brief Generates the SSA instructions from the
    * provided AST node.
    */
-  void generate(parser::node& node);
+  idx generate(parser::node& node);
 
   /**
    * @brief A pool of strings allocated for the IR,

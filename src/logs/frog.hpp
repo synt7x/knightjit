@@ -49,7 +49,8 @@ constexpr std::string_view messages[] = {
     "when parsing expression for ",
     "token is too long starting at ",
     "unterminated string",
-    "unexpected token at end of file"
+    "unexpected token at end of file",
+    "invalid number "
 };
 
 /**
@@ -60,12 +61,13 @@ enum class message : uint8_t {
   input_too_large = 2, expected_expression = 3,
   unknown_identifier = 4, unknown_builtin = 5,
   when_parsing = 6, token_too_long = 7,
-  unterminated_string = 8, token_at_end = 9
+  unterminated_string = 8, token_at_end = 9,
+  invalid_number = 10
 };
 
 // Ensure the messages array has the same number of entries as the message enum
 static_assert(
-  sizeof(messages) / sizeof(messages[0]) == static_cast<size_t>(message::token_at_end) + 1,
+  sizeof(messages) / sizeof(messages[0]) == static_cast<size_t>(message::invalid_number) + 1,
   "Diagnostic messages array must match the number of messages in the enum"
 );
 

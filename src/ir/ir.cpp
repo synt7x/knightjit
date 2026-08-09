@@ -3,6 +3,7 @@
 #include "arena.hpp"
 
 #include <string_view>
+#include <charconv>
 
 ir::idx ir::emit_constant(int64_t num) {
     instruction instr {};
@@ -29,10 +30,31 @@ ir::idx ir::emit_string(frog::span range) {
     return emit_constant(s);
 }
 
-void ir::generate(parser::node& node) {
+ir::idx ir::emit_number(frog::span range) {
+    std::string_view str = parser.fetch(range);
+    
+    int64_t num = 0;
+    auto [ptr, err] = std::from_chars(str.data(), str.data() + str.size(), num);
+
+    if (err != std::errc()) {
+        frog::croak(parser.lex.src, frog::diagnostic {
+            frog::level::error,
+            frog::message::invalid_number,
+            range
+        });
+    }
+
+    return emit_constant(num);
+}
+
+ir::idx ir::generate(parser::node& node) {
     switch (node.type) {
         case parser::node_type::STRING:
-            emit_string(node.range);
-            break;
+            return emit_string(node.range);
+        case parser::node_type::NUMBER:
+            return emit_number(node.range);
+        case parser::node_type::EXPR:
+            generate(parser.nodes.at(node.children[0]));
+            return generate(parser.nodes.at(node.children[1]));
     } 
 }
