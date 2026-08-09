@@ -37,7 +37,7 @@ public:
      * @brief Destroy the arena object
      */
     ~arena() {
-        for (arena_id i = 0; i < last_idx; ++i) {
+        for (arena_id i = 0; i < index; ++i) {
             T* node = reinterpret_cast<T*>(allocator.at(i * sizeof(T)));
             std::destroy_at(node);
         }
@@ -57,7 +57,7 @@ public:
         T* slot = reinterpret_cast<T*>(allocator.pointer_at(id));
 
         std::construct_at(slot, std::forward<Args>(args)...);
-        return last_idx++;
+        return index++;
     }
     
     /**
@@ -88,7 +88,7 @@ public:
     bump allocator;
 
     /// @brief Last index allocated in the arena
-    arena_id last_idx = 0;
+    arena_id index = 0;
 
     /*
     * Special alignment of types is not allowed to be used
