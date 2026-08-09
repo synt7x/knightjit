@@ -5,4 +5,9 @@
 
 namespace vm {
 
+struct string {
+    std::uint64_t length;
+    std::byte content[];
+};
+
 }

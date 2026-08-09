@@ -7,7 +7,7 @@
 namespace vm {
 
 struct array {
-    uint64_t length;
+    std::uint64_t length;
     value content[];
 };
 

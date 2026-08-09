@@ -1,10 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <utility>
-#include <memory>
-#include <new>
-#include <cstddef>
+#include <cstdint>
 
 namespace vm {
 using bump_id = std::size_t;

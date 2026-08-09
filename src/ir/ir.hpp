@@ -5,6 +5,7 @@
 
 #include "parser.hpp"
 #include "arena.hpp"
+#include "bump.hpp"
 #include "string.hpp"
 #include "array.hpp"
 
@@ -52,7 +53,7 @@ public:
    * will be cloned into the data section when generating 
    * machine code.
    */
-  std::vector<std::string_view> strings;
+  vm::bump strings;
 
   /**
    * @brief A pool of arrays allocated for the IR,
