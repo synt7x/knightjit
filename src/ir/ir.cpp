@@ -4,6 +4,7 @@
 
 #include <string_view>
 #include <charconv>
+#include <iostream>
 
 ir::idx ir::emit_constant(int64_t num) {
     instruction instr {};
@@ -14,7 +15,7 @@ ir::idx ir::emit_constant(int64_t num) {
 
 ir::idx ir::emit_constant(vm::string& str) {
     instruction instr {};
-    instr.constant = constant(true, reinterpret_cast<uintptr_t>(&str));
+    instr.constant = constant(true, reinterpret_cast<uintptr_t>(&str) >> 3);
     
     return emit(instr);
 }
@@ -22,11 +23,14 @@ ir::idx ir::emit_constant(vm::string& str) {
 ir::idx ir::emit_string(frog::span range) {
     std::string_view str = parser.fetch(range);
     vm::bump_id id = strings.allocate(str.size() + 2);
+
     vm::string& s = *reinterpret_cast<vm::string*>(strings.pointer_at(id));
     s.length = str.size();
 
-    std::memcpy(strings.pointer_at(id) + 2, str.data(), str.size());
-
+    for (std::size_t i = 0; i < str.size(); i++) {
+        s.content[i] = static_cast<std::byte>(str[i]);
+    }
+    
     return emit_constant(s);
 }
 

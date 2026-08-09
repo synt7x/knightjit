@@ -19,6 +19,7 @@ int execute(std::string_view input) {
   if (parser.failed) return 1;
 
   ir ir(ast, parser);
+  debug::inspect(&ir);
 
   return 0;
 }

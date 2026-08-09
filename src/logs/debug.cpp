@@ -1,5 +1,6 @@
 #include "debug.hpp"
 #include "parser.hpp"
+#include "ir.hpp"
 
 #include <cstdint>
 #include <string_view>
@@ -15,8 +16,28 @@ void inspect(parser* parse) {
     
 }
 
-void inspect(parser* parse, parser::node node, const std::string& prefix, bool last) {
+void inspect(ir* ir) {
+    for (std::size_t i = 0; i < ir->instructions.size(); i++) {
+        const ir::instruction& instr = ir->instructions[i];
+        std::cout << "v" << i << " = ";
 
+        if (instr.compact.flag == ir::flags::COMPACT) {
+            std::cout << "COMPACT ";
+        } else if (instr.extended.flag == ir::flags::EXTENDED) {
+            std::cout << "EXTENDED ";
+        } else if (instr.constant.flag == static_cast<uint64_t>(ir::flags::CONSTANT)) {
+            if (instr.constant.is_string) {
+                vm::string* str = reinterpret_cast<vm::string*>(instr.constant.value << 3);
+
+                std::cout << "\"" << str->view() << "\"\n";
+            } else {
+                std::cout << instr.constant.value << "\n";
+            }
+        }
+    }
+}
+
+void inspect(parser* parse, parser::node node, const std::string& prefix, bool last) {
     std::cout << prefix;
 
     if (!prefix.empty()) {
