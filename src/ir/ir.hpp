@@ -35,12 +35,25 @@ public:
     generate(ast);
   }
 
-  idx emit_constant(vm::string& str);
-  idx emit_constant(vm::array& arr);
-  idx emit_constant(int64_t num);
+  
+  /**
+   * @brief A block of SSA instructions.
+   * 
+   * Represented as a span over the continuous
+   * array of instructions.
+   * 
+   */
+  struct block {
+    idx start;
+    idx length;
 
-  idx emit_string(frog::span range);
-  idx emit_number(frog::span range);
+    std::vector<idx> extended;
+  };
+
+  std::vector<block> blocks = { 
+    { 0, 0, {} } // The root block, length is updated once it is finished.
+  };
+
 
   /**
    * @brief Generates the SSA instructions from the
@@ -134,6 +147,8 @@ public:
     idx anchor : 24;
     idx v2 : 16;
     idx v3 : 16;
+
+    compact(opcode op) : flag(flags::COMPACT), op(op), anchor(0), v2(0), v3(0) {}
   };
 
   /**
@@ -149,6 +164,8 @@ public:
     flags flag : 2;
     opcode op : 6;
     idx e_anchor : 32;
+
+    extended(opcode op, idx v1) : flag(flags::EXTENDED), op(op), e_anchor(v1) {}
   };
 
   /**
@@ -182,6 +199,8 @@ public:
     compact compact;
     extended extended;
     constant constant;
+
+    instruction() : compact(opcode::NOP) {}
   };
 
   /**
@@ -195,6 +214,22 @@ public:
   idx length() const {
     return instructions.size();
   }
+
+  idx emit_constant(vm::string& str);
+  idx emit_constant(vm::array& arr);
+  idx emit_constant(int64_t num);
+
+  idx emit_compact(ir::opcode op, idx v1 = 0, idx v2 = 0, idx v3 = 0);
+  idx emit_extended(ir::opcode op, idx v1, idx v2 = 0, idx v3 = 0);
+
+  idx emit_instruction(opcode op);
+  idx emit_instruction(opcode op, idx v1);
+  idx emit_instruction(opcode op, idx v1, idx v2);
+  idx emit_instruction(opcode op, idx v1, idx v2, idx v3);
+
+  idx emit_string(frog::span range);
+  idx emit_number(frog::span range);
+
 
   idx emit(instruction instr) {
     instructions.emplace_back(instr);

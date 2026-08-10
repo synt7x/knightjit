@@ -22,9 +22,9 @@ void inspect(ir* ir) {
         std::cout << "v" << i << " = ";
 
         if (instr.compact.flag == ir::flags::COMPACT) {
-            std::cout << "COMPACT ";
+            std::cout << "COMPACT\n";
         } else if (instr.extended.flag == ir::flags::EXTENDED) {
-            std::cout << "EXTENDED ";
+            std::cout << "EXTENDED\n";
         } else if (instr.constant.flag == static_cast<uint64_t>(ir::flags::CONSTANT)) {
             if (instr.constant.is_string) {
                 vm::string* str = reinterpret_cast<vm::string*>(instr.constant.value << 3);
@@ -62,14 +62,15 @@ void inspect(parser* parse, parser::node node, const std::string& prefix, bool l
 
     std::cout << '\n';
 
-    for (size_t i = 0; i < node.children.size(); ++i) {
-        inspect(
-            parse,
-            parse->get(node.children[i]),
-            prefix + (last ? "   " : "|  "),
-            i == node.children.size() - 1
-        );
-    }
+    // for (size_t i = 0; i < 4; i++) {
+    //     if (node.children[i] == 0) break;
+    //     inspect(
+    //         parse,
+    //         parse->get(node.children[i]),
+    //         prefix + (last ? "   " : "|  "),
+    //         i == node.children.
+    //     );
+    // }
 }
 
 const std::string_view inspect(parser::node_type type) {

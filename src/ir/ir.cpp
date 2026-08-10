@@ -20,6 +20,65 @@ ir::idx ir::emit_constant(vm::string& str) {
     return emit(instr);
 }
 
+ir::idx ir::emit_compact(ir::opcode op, idx v1, idx v2, idx v3) {
+    instruction instr {};
+    instr.compact = compact(op);
+    instr.compact.anchor = length() - v1;
+    instr.compact.v2 = (length() - v1) + v2;
+    instr.compact.v3 = (length() - v1) +v3;
+
+    return emit(instr);
+}
+
+ir::idx ir::emit_extended(ir::opcode op, idx v1, idx v2, idx v3) {
+    instruction instr {};
+    idx anchor = blocks.back().extended.size();
+
+    blocks.back().extended.push_back(v1);
+    blocks.back().extended.push_back(v2);
+    blocks.back().extended.push_back(v3);
+
+    instr.extended = extended(op, anchor);
+
+    return emit(instr);
+}
+
+ir::idx ir::emit_instruction(ir::opcode op) {
+    instruction instr {};
+
+    return emit_compact(op, 0, 0, 0);
+}
+
+ir::idx ir::emit_instruction(ir::opcode op, idx v1) {
+    instruction instr {};
+
+    if (length() - v1 > (1 << 24) - 1) {
+        return emit_extended(op, v1, 0, 0);
+    } else {
+        return emit_compact(op, v1, 0, 0);
+    }
+}
+
+ir::idx ir::emit_instruction(ir::opcode op, idx v1, idx v2) {
+    instruction instr {};
+
+    if (length() - v1 > (1 << 24) - 1 || (length() - v1) + v2 > (1 << 16) - 1) {
+        return emit_extended(op, v1, v2, 0);
+    } else {
+        return emit_compact(op, v1, v2, 0);
+    }
+}
+
+ir::idx ir::emit_instruction(ir::opcode op, idx v1, idx v2, idx v3) {
+    instruction instr {};
+
+    if (length() - v1 > (1 << 24) - 1 || (length() - v1) + v2 > (1 << 16) - 1 || (length() - v1) + v3 > (1 << 16) - 1) {
+        return emit_extended(op, v1, v2, v3);
+    } else {
+        return emit_compact(op, v1, v2, v3);
+    }
+}
+
 ir::idx ir::emit_string(frog::span range) {
     std::string_view str = parser.fetch(range);
     vm::bump_id id = strings.allocate(str.size() + 2);

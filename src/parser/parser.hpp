@@ -35,7 +35,7 @@ public:
   struct node {
     node_type type;
     frog::span range;
-    std::vector<node_id> children;
+    node_id children[4];
   };
 
   /// @brief An alias for the root node of the AST.
