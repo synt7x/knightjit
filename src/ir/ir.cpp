@@ -147,5 +147,12 @@ ir::idx ir::generate(parser::node& node) {
 
             return emit_instruction(opcode::SUB, left, right);
         }
+        default:
+            frog::croak(parser.lex.src, frog::diagnostic {
+                frog::level::error,
+                frog::message::unimplemented,
+                node.range
+            });
+            break;
     } 
 }
