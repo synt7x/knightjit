@@ -15,7 +15,7 @@ ir::idx ir::emit_constant(int64_t num) {
 
 ir::idx ir::emit_constant(vm::string& str) {
     instruction instr {};
-    instr.constant = constant(true, reinterpret_cast<uintptr_t>(&str) >> 3);
+    instr.constant = constant(true, reinterpret_cast<uintptr_t>(&str));
     
     return emit(instr);
 }
@@ -23,9 +23,15 @@ ir::idx ir::emit_constant(vm::string& str) {
 ir::idx ir::emit_compact(ir::opcode op, idx v1, idx v2, idx v3) {
     instruction instr {};
     instr.compact = compact(op);
-    instr.compact.anchor = length() - v1;
-    instr.compact.v2 = (length() - v1) + v2;
-    instr.compact.v3 = (length() - v1) +v3;
+
+    int32_t anchor_offset = static_cast<int32_t>(length() - v1);
+    instr.compact.anchor = static_cast<uint32_t>(anchor_offset);
+
+    int32_t d2 = static_cast<int32_t>(v2) - static_cast<int32_t>(v1);
+    int32_t d3 = static_cast<int32_t>(v3) - static_cast<int32_t>(v1);
+
+    instr.compact.v2 = static_cast<uint16_t>(static_cast<int16_t>(d2));
+    instr.compact.v3 = static_cast<uint16_t>(static_cast<int16_t>(d3));
 
     return emit(instr);
 }
@@ -44,15 +50,14 @@ ir::idx ir::emit_extended(ir::opcode op, idx v1, idx v2, idx v3) {
 }
 
 ir::idx ir::emit_instruction(ir::opcode op) {
-    instruction instr {};
-
     return emit_compact(op, 0, 0, 0);
 }
 
 ir::idx ir::emit_instruction(ir::opcode op, idx v1) {
-    instruction instr {};
+    int64_t anchor = static_cast<int64_t>(length()) - static_cast<int64_t>(v1);
+    bool fits = (anchor >= 0) && (anchor <= 0xFFFFFF);
 
-    if (length() - v1 > (1 << 24) - 1) {
+    if (!fits) {
         return emit_extended(op, v1, 0, 0);
     } else {
         return emit_compact(op, v1, 0, 0);
@@ -60,9 +65,13 @@ ir::idx ir::emit_instruction(ir::opcode op, idx v1) {
 }
 
 ir::idx ir::emit_instruction(ir::opcode op, idx v1, idx v2) {
-    instruction instr {};
+    int64_t anchor = static_cast<int64_t>(length()) - static_cast<int64_t>(v1);
+    int64_t d2 = static_cast<int64_t>(v2) - static_cast<int64_t>(v1);
 
-    if (length() - v1 > (1 << 24) - 1 || (length() - v1) + v2 > (1 << 16) - 1) {
+    bool fits = ((anchor >= 0) && (anchor <= 0xFFFFFF))
+        || ((d2 >= -32768) && (d2 <= 32767));
+
+    if (!fits) {
         return emit_extended(op, v1, v2, 0);
     } else {
         return emit_compact(op, v1, v2, 0);
@@ -70,9 +79,16 @@ ir::idx ir::emit_instruction(ir::opcode op, idx v1, idx v2) {
 }
 
 ir::idx ir::emit_instruction(ir::opcode op, idx v1, idx v2, idx v3) {
-    instruction instr {};
+    int64_t anchor = static_cast<int64_t>(length()) - static_cast<int64_t>(v1);
 
-    if (length() - v1 > (1 << 24) - 1 || (length() - v1) + v2 > (1 << 16) - 1 || (length() - v1) + v3 > (1 << 16) - 1) {
+    int64_t d2 = static_cast<int64_t>(v2) - static_cast<int64_t>(v1);
+    int64_t d3 = static_cast<int64_t>(v3) - static_cast<int64_t>(v1);
+
+    bool fits =( (anchor >= 0) && (anchor <= 0xFFFFFF))
+        || ((d2 >= -32768) && (d2 <= 32767))
+        || ((d3 >= -32768) && (d3 <= 32767));
+
+    if (!fits) {
         return emit_extended(op, v1, v2, v3);
     } else {
         return emit_compact(op, v1, v2, v3);
@@ -119,5 +135,17 @@ ir::idx ir::generate(parser::node& node) {
         case parser::node_type::EXPR:
             generate(parser.nodes.at(node.children[0]));
             return generate(parser.nodes.at(node.children[1]));
+        case parser::node_type::ADD: {
+            idx left = generate(parser.nodes.at(node.children[0]));
+            idx right = generate(parser.nodes.at(node.children[1]));
+            
+            return emit_instruction(opcode::ADD, left, right);
+        }
+        case parser::node_type::SUBTRACT: {
+            idx left = generate(parser.nodes.at(node.children[0]));
+            idx right = generate(parser.nodes.at(node.children[1]));
+
+            return emit_instruction(opcode::SUB, left, right);
+        }
     } 
 }

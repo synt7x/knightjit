@@ -186,7 +186,17 @@ public:
     uint64_t is_string : 1;
     uint64_t value : 61;
 
-    constant(bool is_string, uintptr_t value) : flag(static_cast<uint64_t>(flags::CONSTANT)), is_string(is_string), value(value) {}
+    constant(bool is_string, uintptr_t value) : flag(static_cast<uint64_t>(flags::CONSTANT)), is_string(is_string), value(is_string ? (value >> 3) : value) {}
+
+    /**
+     * @brief Unpacks the constant value as a string.
+     * 
+     * @return vm::string* 
+     */
+    vm::string* unpack() const {
+      if (!is_string) return nullptr;
+      return reinterpret_cast<vm::string*>(value << 3);
+    }
   };
 
   /**

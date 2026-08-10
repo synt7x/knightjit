@@ -16,19 +16,51 @@ void inspect(parser* parse) {
     
 }
 
+const std::string_view inspect(ir::opcode op) {
+    switch (op) {
+        case ir::opcode::PANIC: return "panic";
+        case ir::opcode::NOP: return "nop";
+        case ir::opcode::ADD: return "add";
+        case ir::opcode::SUB: return "sub";
+        default: return "unknown";
+    }
+}
+
+void inspect(ir::compact instr, std::size_t idx) {
+    int32_t anchor = static_cast<int32_t>(idx) - static_cast<int32_t>(instr.anchor);
+
+    uint16_t c2 = static_cast<uint16_t>(instr.v2);
+    uint16_t c3 = static_cast<uint16_t>(instr.v3);
+
+    int32_t d2 = static_cast<int16_t>(c2);
+    int32_t d3 = static_cast<int16_t>(c3);
+
+    int32_t r2 = anchor + d2;
+    int32_t r3 = anchor + d3;
+
+    switch (instr.op) {
+        case ir::opcode::ADD:
+        case ir::opcode::SUB:
+            std::cout << inspect(instr.op) 
+                      << " v" << anchor 
+                      << " v" << r2 
+                      << "\n";
+            break;
+    }
+}
+
 void inspect(ir* ir) {
     for (std::size_t i = 0; i < ir->instructions.size(); i++) {
         const ir::instruction& instr = ir->instructions[i];
-        std::cout << "v" << i << " = ";
+        std::cout << i << ": " << "v" << i << " = ";
 
         if (instr.compact.flag == ir::flags::COMPACT) {
-            std::cout << "COMPACT\n";
+            inspect(instr.compact, i);
         } else if (instr.extended.flag == ir::flags::EXTENDED) {
             std::cout << "EXTENDED\n";
         } else if (instr.constant.flag == static_cast<uint64_t>(ir::flags::CONSTANT)) {
             if (instr.constant.is_string) {
-                vm::string* str = reinterpret_cast<vm::string*>(instr.constant.value << 3);
-
+                vm::string* str = instr.constant.unpack();
                 std::cout << "\"" << str->view() << "\"\n";
             } else {
                 std::cout << instr.constant.value << "\n";
