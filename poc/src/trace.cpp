@@ -11,7 +11,7 @@ constexpr uint8_t ADD_INT[100] = {
     0x48, 0x89, 0xca, // mov rdx, rcx
     0x48, 0x83, 0xe2, 0x07, // and rdx, 0x7
     0x74, 0x06, // jz <SKIP>
-    0xff, 0x25, 0x00, 0x00, 0x00, 0x00, // jmp <STUB>
+    0xe9, 0x00, 0x00, 0x00, 0x00, // jmp <STUB>
     
     // <SKIP>:
     0x49, 0xff, 0x06, // inc qword [trace_slot_1]
@@ -25,7 +25,7 @@ constexpr uint8_t ADD_INT[100] = {
     0x66, 0x2E, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00, // nop DWORD PTR [rax+rax*1+0x0]
     0x66, 0x2E, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00, // nop DWORD PTR [rax+rax*1+0x0]
     0x66, 0x0f, 0x1f, 0x44, 0x00, 0x00, // nop
-    0x0f, 0x1f, 0x00, // nop
+    0x0f, 0x1f, 0x04, 0x00,
     // <END>:
 };
 
@@ -35,7 +35,7 @@ constexpr uint8_t ADD_STR[100] = {
     0x48, 0x83, 0xe2, 0x07, // and rdx, 0x7
     0x48, 0x83, 0xfa, 0x03, // cmp rdx, 3
     0x74, 0x06, // jz <SKIP>
-    0xff, 0x25, 0x00, 0x00, 0x00, 0x00, // jmp <STUB>
+    0xe9, 0x00, 0x00, 0x00, 0x00, // jmp <STUB>
     
     // <SKIP>:
     0x49, 0xff, 0x46, 0x08, // inc qword [trace_slot_2]
@@ -63,7 +63,8 @@ constexpr uint8_t ADD_STR[100] = {
     0x4c, 0x89, 0xd1, // mov rcx, r10
 
     0x48, 0x01, 0xcb, // add rbx, rcx
-    0x0F, 0x1F, 0x80, 0x00, 0x00, 0x00, 0x00 // nop
+    0x0F, 0x1F, 0x80, 0x00, 0x00, 0x00, 0x00, // nop
+    0x90, // nop
 };
 
 constexpr uint8_t STUB1[256] = {
@@ -97,7 +98,7 @@ constexpr uint8_t STUB1[256] = {
     0x4c, 0x89, 0xd1, // mov rcx, r10
 
     0x48, 0x01, 0xcb, // add rbx, rcx
-    0xff, 0x25, 0x00, 0x00, 0x00, 0x00, // jmp <STUB>
+    0xe9, 0x00, 0x00, 0x00, 0x00, // jmp <STUB>
 };
 
 constexpr uint8_t STUB2[256] = {
@@ -107,8 +108,17 @@ constexpr uint8_t STUB2[256] = {
     // and shunt them into integers in rcx
     0x49, 0xff, 0x06, // inc qword [trace_slot_1]
     0x48, 0x01, 0xcb, // add rbx, rcx
-    0xff, 0x25, 0x00, 0x00, 0x00, 0x00, // jmp <STUB>
+    0xe9, 0x00, 0x00, 0x00, 0x00, // jmp <STUB>
 };
+
+void generate_thunk(const uint8_t thunk[], size_t thunk_size, size_t jmp_offset, uint8_t* stub, uint8_t* target, uint8_t buffer[]) {
+    memcpy(buffer, thunk, thunk_size);
+
+    const uint8_t* jmp = target + jmp_offset;
+    int32_t rel32 = static_cast<int32_t>(stub - (jmp + 5));
+
+    memcpy(&buffer[jmp_offset + 1], &rel32, sizeof(int32_t));
+}
 
 void tracer(pool trace_pool, void(*program)()) {
     uint8_t* code = reinterpret_cast<uint8_t*>(program);
@@ -127,12 +137,24 @@ void tracer(pool trace_pool, void(*program)()) {
         if (patch == 0 && slot1 > 10000) {
             std::cout << "[Tracer] Integer phase solidification detected at count: " << slot1 << std::endl;
 
+            uint8_t thunk[100];
+            generate_thunk(ADD_INT, sizeof(ADD_INT), 9, stub, target_address, thunk);
+
+            uint8_t stub1[256];
+            generate_thunk(STUB1, sizeof(STUB1), 6, target_address, stub, stub1);
+
             flush(code);
 
             patch = 1;
             std::cout << "[Tracer] Specialized integer trace patched successfully." << std::endl;
         } else if (patch == 1 && slot2 > 10000) {
             std::cout << "[Tracer] String phase solidification detected at count: " << slot2 << std::endl;
+
+            uint8_t thunk[100];
+            generate_thunk(ADD_STR, sizeof(ADD_STR), 9, stub, target_address, thunk);
+
+            uint8_t stub2[256];
+            generate_thunk(STUB1, sizeof(STUB1), 43, target_address, stub, stub2);
 
             flush(code);
 
