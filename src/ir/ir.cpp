@@ -95,6 +95,24 @@ ir::idx ir::emit_instruction(ir::opcode op, idx v1, idx v2, idx v3) {
     }
 }
 
+ir::idx ir::patch(idx index, opcode op, idx v1, idx v2, idx v3) {
+    instruction& instr = instructions[index];
+    int64_t anchor = static_cast<int64_t>(length()) - static_cast<int64_t>(v1);
+
+    int64_t d2 = static_cast<int64_t>(v2) - static_cast<int64_t>(v1);
+    int64_t d3 = static_cast<int64_t>(v3) - static_cast<int64_t>(v1);
+
+    bool fits =( (anchor >= 0) && (anchor <= 0xFFFFFF))
+        || ((d2 >= -32768) && (d2 <= 32767))
+        || ((d3 >= -32768) && (d3 <= 32767));
+
+    if (!fits) {
+        
+    } else {
+        
+    }
+}
+
 ir::idx ir::emit_string(frog::span range) {
     std::string_view str = parser.fetch(range);
     vm::bump_id id = strings.allocate(str.size() + 2);
@@ -126,6 +144,16 @@ ir::idx ir::emit_number(frog::span range) {
     return emit_constant(num);
 }
 
+ir::idx ir::emit_block(idx block) {
+    return emit_instruction(opcode::BLOCK, block);
+}
+
+ir::idx ir::generate_block(parser::node& node) {
+    idx patch = emit_instruction(opcode::JMP, 0);
+
+    return patch;
+}
+
 ir::idx ir::generate(parser::node& node) {
     switch (node.type) {
         case parser::node_type::STRING:
@@ -135,17 +163,65 @@ ir::idx ir::generate(parser::node& node) {
         case parser::node_type::EXPR:
             generate(parser.nodes.at(node.children[0]));
             return generate(parser.nodes.at(node.children[1]));
+        case parser::node_type::BLOCK:
+            idx block = generate_block(parser.nodes.at(node.children[0]));
+            patch(block, opcode::JMP, length());
+            return emit_block(block + 1);
+        case parser::node_type::NOT: {
+            idx child = generate(parser.nodes.at(node.children[0]));
+            return emit_instruction(opcode::NOT, child);
+        }
+        case parser::node_type::NEGATE: {
+            idx child = generate(parser.nodes.at(node.children[0]));
+            return emit_instruction(opcode::NEGATE, child);
+        }
         case parser::node_type::ADD: {
             idx left = generate(parser.nodes.at(node.children[0]));
             idx right = generate(parser.nodes.at(node.children[1]));
+
+            idx coercion = emit_instruction(opcode::COERCE, right, left);
             
-            return emit_instruction(opcode::ADD, left, right);
+            return emit_instruction(opcode::ADD, left, coercion);
         }
         case parser::node_type::SUBTRACT: {
             idx left = generate(parser.nodes.at(node.children[0]));
             idx right = generate(parser.nodes.at(node.children[1]));
 
-            return emit_instruction(opcode::SUB, left, right);
+            idx coercion = emit_instruction(opcode::COERCE, right, left);
+
+            return emit_instruction(opcode::SUB, left, coercion);
+        }
+        case parser::node_type::MULTIPLY: {
+            idx left = generate(parser.nodes.at(node.children[0]));
+            idx right = generate(parser.nodes.at(node.children[1]));
+
+            idx coercion = emit_instruction(opcode::COERCE, right, left);
+
+            return emit_instruction(opcode::MUL, left, coercion);
+        }
+        case parser::node_type::DIVIDE: {
+            idx left = generate(parser.nodes.at(node.children[0]));
+            idx right = generate(parser.nodes.at(node.children[1]));
+
+            idx coercion = emit_instruction(opcode::COERCE, right, left);
+
+            return emit_instruction(opcode::DIV, left, coercion);
+        }
+        case parser::node_type::MOD: {
+            idx left = generate(parser.nodes.at(node.children[0]));
+            idx right = generate(parser.nodes.at(node.children[1]));
+
+            idx coercion = emit_instruction(opcode::COERCE, right, left);
+
+            return emit_instruction(opcode::MOD, left, coercion);
+        }
+        case parser::node_type::POWER: {
+            idx left = generate(parser.nodes.at(node.children[0]));
+            idx right = generate(parser.nodes.at(node.children[1]));
+
+            idx coercion = emit_instruction(opcode::COERCE, right, left);
+
+            return emit_instruction(opcode::POW, left, coercion);
         }
         default:
             frog::croak(parser.lex.src, frog::diagnostic {

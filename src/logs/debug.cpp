@@ -20,8 +20,18 @@ const std::string_view inspect(ir::opcode op) {
     switch (op) {
         case ir::opcode::PANIC: return "panic";
         case ir::opcode::NOP: return "nop";
+        case ir::opcode::CALL: return "call";
+        case ir::opcode::QUIT: return "quit";
+        case ir::opcode::OUTPUT: return "output";
+        case ir::opcode::NOT: return "not";
+        case ir::opcode::NEGATE: return "negate";
         case ir::opcode::ADD: return "add";
         case ir::opcode::SUB: return "sub";
+        case ir::opcode::MUL: return "mul";
+        case ir::opcode::DIV: return "div";
+        case ir::opcode::MOD: return "mod";
+        case ir::opcode::POW: return "pow";
+        case ir::opcode::COERCE: return "coerce";
         default: return "unknown";
     }
 }
@@ -41,6 +51,11 @@ void inspect(ir::compact instr, std::size_t idx) {
     switch (instr.op) {
         case ir::opcode::ADD:
         case ir::opcode::SUB:
+        case ir::opcode::MUL:
+        case ir::opcode::DIV:
+        case ir::opcode::POW:
+        case ir::opcode::MOD:
+        case ir::opcode::COERCE:
             std::cout << inspect(instr.op) 
                       << " v" << anchor 
                       << " v" << r2 

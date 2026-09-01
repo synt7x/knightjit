@@ -54,6 +54,12 @@ public:
     { 0, 0, {} } // The root block, length is updated once it is finished.
   };
 
+  /**
+   * @brief Generates the SSA instructions from the
+   * provided AST node in the form of a block.
+   */
+  idx generate_block(parser::node& node);
+
 
   /**
    * @brief Generates the SSA instructions from the
@@ -90,6 +96,15 @@ public:
     /// @brief Performs no operation. This instruction is *never* compiled in JIT mode.
     NOP,
 
+    BLOCK,
+
+    CALL,
+    QUIT,
+    OUTPUT,
+    NOT,
+    NEGATE,
+
+
     /**
      * @brief Addition operation, coerces the second argument to the first.
      * 
@@ -113,6 +128,15 @@ public:
      * @note - null: Results in `vm::error::subtract_null`.
      */
     SUB,
+
+    MUL,
+    DIV,
+    MOD,
+    POW,
+
+    COERCE,
+
+    JMP,
   };
 
   enum class flags {
@@ -237,9 +261,14 @@ public:
   idx emit_instruction(opcode op, idx v1, idx v2);
   idx emit_instruction(opcode op, idx v1, idx v2, idx v3);
 
+  idx patch(idx index, opcode op);
+  idx patch(idx index, opcode op, idx v1);
+  idx patch(idx index, opcode op, idx v1, idx v2);
+  idx patch(idx index, opcode op, idx v1, idx v2, idx v3);
+
   idx emit_string(frog::span range);
   idx emit_number(frog::span range);
-
+  idx emit_block(idx block);
 
   idx emit(instruction instr) {
     instructions.emplace_back(instr);
