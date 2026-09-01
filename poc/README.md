@@ -3,7 +3,7 @@ This proof-of-concept demonstrates that the tracing, optimizing, and patching wo
 
 This example is based around the following Knight pseudo-code:
 ```knight
-; = list ...75,000 ints... ... 25,000 strings ...
+; = list ...7,500,000 ints... ... 2,500,000 strings ...
 ; = i 0
 ; = result 0
 WHILE > #list i
