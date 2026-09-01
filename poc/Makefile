@@ -64,10 +64,10 @@ build: deps $(OBJECTS)
 	@echo ==== Built $(TARGET)/$(EXECUTABLE) ====
 
 $(ARTIFACTS)/%.o: $(SRC)/%.cpp
-	$(COMPILER) $(CFLAGS) -c $(SRC)/$*.cpp -o $@ -I$(DYNASM)
+	$(COMPILER) $(CFLAGS) -c $(SRC)/$*.cpp -o $@ -I$(DYNASM) -I$(SRC)
 
 $(ARTIFACTS)/%.$(ARCH).o: $(ARTIFACTS)/%.$(ARCH).cpp
-	$(COMPILER) $(CFLAGS) -c $(ARTIFACTS)/$*.$(ARCH).cpp -o $@ -I$(DYNASM)
+	$(COMPILER) $(CFLAGS) -c $(ARTIFACTS)/$*.$(ARCH).cpp -o $@ -I$(DYNASM) -I$(SRC)
 
 $(ARTIFACTS)/stage0.$(ARCH).cpp: $(SRC)/stage0.cpp
 	$(LUA) $(DYNASM)/dynasm.lua -D $(ARCH) -o $@ $<

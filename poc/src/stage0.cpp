@@ -116,6 +116,8 @@ void* stage0(pool trace_pool) {
     | lea rcx, [->array]
     | mov rcx, [rcx + rax * 8 + 8]
     
+    /* Add */
+    |=>2:
     | mov rdx, rcx
     | and rdx, 0x7
     | jz >9
@@ -163,6 +165,7 @@ void* stage0(pool trace_pool) {
     | inc qword [r14]
 
     | add rbx, rcx
+    |=>3:
     | inc rax
     | jmp <3
 
@@ -180,6 +183,7 @@ void* stage0(pool trace_pool) {
     byte* linked = (byte*) link(&d);
     void* program = linked + dasm_getpclabel(&d, 1);    
     uintptr_t *table = (uintptr_t*) (linked + dasm_getpclabel(&d, 0));
+    std::cout << "[JIT] Patchable code exists as " << (dasm_getpclabel(&d, 3) - dasm_getpclabel(&d, 2)) << " bytes from offset " << dasm_getpclabel(&d, 2) << std::endl;
     dasm_free(&d);
 
 

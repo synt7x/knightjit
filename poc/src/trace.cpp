@@ -10,6 +10,10 @@ void tracer(pool trace_pool, void(*program)()) {
     uint8_t* code = reinterpret_cast<uint8_t*>(program);
     uint8_t patch = 0;
 
+    uint8_t* target_address = code + 52;
+    void* stub = jalloc(256);
+    jprotect(stub, 256);
+
     std::cout << "[Tracer] Tracing thread started." << std::endl;
 
     while (true) {
