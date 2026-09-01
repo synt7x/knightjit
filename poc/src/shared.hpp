@@ -16,6 +16,17 @@
     #define jprotect(ptr, size) mprotect(ptr, size, PROT_READ | PROT_WRITE | PROT_EXEC);
 #endif
 
+inline static void flush(void* code) {
+#if _WIN32
+    FlushInstructionCache(GetCurrentProcess(), code, 64000);
+#else
+    __builtin___clear_cache(
+        reinterpret_cast<char*>(code_base), 
+        reinterpret_cast<char*>(code_base + 64000)
+    );
+    #endif
+}
+
 using pool = uint64_t*;
 void* stage0(pool trace_pool);
 void tracer(pool trace_pool, void(*program)());
