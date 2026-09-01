@@ -11,10 +11,10 @@ void* link(dasm_State** d) {
     void* ptr;
 
     dasm_link(d, &size);
-    ptr = jalloc(size);
+    ptr = jalloc(size + 256);
     
     dasm_encode(d, ptr);
-    jprotect(ptr, size);
+    jprotect(ptr, size + 256);
 
     return ptr;
 }
@@ -54,7 +54,7 @@ void* stage0(pool trace_pool) {
     uint32_t apc = 8;
     uint32_t cpc = 0;
 
-    | .section code, constants
+    | .section constants, code
     dasm_init(&d, DASM_MAXSECTION);
 
     | .globals label_
@@ -179,12 +179,15 @@ void* stage0(pool trace_pool) {
     | add rsp, 40
 
     | ret
+    |=>4:
 
     byte* linked = (byte*) link(&d);
     void* program = linked + dasm_getpclabel(&d, 1);    
     uintptr_t *table = (uintptr_t*) (linked + dasm_getpclabel(&d, 0));
-    std::cout << "[JIT] Patchable code exists as " << (dasm_getpclabel(&d, 3) - dasm_getpclabel(&d, 2)) << " bytes from offset " << dasm_getpclabel(&d, 2) << std::endl;
+    std::cout << "[JIT] Patchable code exists as " << (dasm_getpclabel(&d, 3) - dasm_getpclabel(&d, 2)) << " bytes from offset " << (dasm_getpclabel(&d, 2) - dasm_getpclabel(&d, 1)) << std::endl;
+    std::cout << "[JIT] Stub region is located " << (dasm_getpclabel(&d, 4) - dasm_getpclabel(&d, 1)) << " bytes from the start of the program." << std::endl;
     dasm_free(&d);
+    
 
 
     /* Fixup types, this is because we are storing constants alongside the assembly */
