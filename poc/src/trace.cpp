@@ -1,7 +1,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
-#include <atomic>
 
 #include "shared.hpp"
 
