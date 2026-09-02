@@ -163,10 +163,11 @@ ir::idx ir::generate(parser::node& node) {
         case parser::node_type::EXPR:
             generate(parser.nodes.at(node.children[0]));
             return generate(parser.nodes.at(node.children[1]));
-        case parser::node_type::BLOCK:
+        case parser::node_type::BLOCK: {
             idx block = generate_block(parser.nodes.at(node.children[0]));
             patch(block, opcode::JMP, length());
             return emit_block(block + 1);
+        }
         case parser::node_type::NOT: {
             idx child = generate(parser.nodes.at(node.children[0]));
             return emit_instruction(opcode::NOT, child);
