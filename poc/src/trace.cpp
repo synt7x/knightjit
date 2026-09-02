@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <atomic>
 
 #include "shared.hpp"
 
@@ -144,9 +145,9 @@ void tracer(pool trace_pool, void(*program)()) {
 
             uint8_t stub1[256];
             generate_thunk(STUB1, sizeof(STUB1), 43, target_address, stub, stub1);
-
-            jswap(target_address, thunk, 100);
+            
             jswap(stub, stub1, 256);
+            jswap(target_address, thunk, 100);
 
             flush(code);
 
@@ -161,8 +162,8 @@ void tracer(pool trace_pool, void(*program)()) {
             uint8_t stub2[256];
             generate_thunk(STUB2, sizeof(STUB2), 6, target_address, stub, stub2);
 
-            jswap(target_address, thunk, 100);
             jswap(stub, stub2, 256);
+            jswap(target_address, thunk, 100);
 
             flush(code);
 
