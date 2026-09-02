@@ -141,7 +141,7 @@ void tracer(pool trace_pool, void(*program)()) {
             generate_thunk(ADD_INT, sizeof(ADD_INT), 9, stub, target_address, thunk);
 
             uint8_t stub1[256];
-            generate_thunk(STUB1, sizeof(STUB1), 6, target_address, stub, stub1);
+            generate_thunk(STUB1, sizeof(STUB1), 43, target_address, stub, stub1);
 
             flush(code);
 
@@ -154,7 +154,7 @@ void tracer(pool trace_pool, void(*program)()) {
             generate_thunk(ADD_STR, sizeof(ADD_STR), 9, stub, target_address, thunk);
 
             uint8_t stub2[256];
-            generate_thunk(STUB1, sizeof(STUB2), 43, target_address, stub, stub2);
+            generate_thunk(STUB2, sizeof(STUB2), 6, target_address, stub, stub2);
 
             flush(code);
 
