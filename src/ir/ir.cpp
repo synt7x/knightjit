@@ -95,6 +95,27 @@ ir::idx ir::emit_instruction(ir::opcode op, idx v1, idx v2, idx v3) {
     }
 }
 
+ir::idx ir::patch(idx index, opcode op, idx v1) {
+    int64_t anchor = static_cast<int64_t>(length()) - static_cast<int64_t>(v1);
+    bool fits = (anchor >= 0) && (anchor <= 0xFFFFFF);
+    instruction& instr = instructions[index];
+
+    if (instr.compact.flag == flags::EXTENDED) {
+        frog::croak(parser.lex.src, frog::diagnostic {
+            frog::level::panic,
+            frog::message::bug_extended,
+            frog::span { 0, 0 }
+        });
+    }
+
+    if (!fits) {
+        instr.extended = extended(op, v1);
+    } else {
+        instr.compact = compact(op);
+        instr.compact.anchor = static_cast<uint32_t>(anchor);
+    }
+}
+
 ir::idx ir::patch(idx index, opcode op, idx v1, idx v2, idx v3) {
     instruction& instr = instructions[index];
     int64_t anchor = static_cast<int64_t>(length()) - static_cast<int64_t>(v1);
@@ -168,6 +189,14 @@ ir::idx ir::generate(parser::node& node) {
             patch(block, opcode::JMP, length());
             return emit_block(block + 1);
         }
+        case parser::node_type::ASCII: {
+            idx child = generate(parser.nodes.at(node.children[0]));
+            return emit_instruction(opcode::ASCII, child);
+        }
+        case parser::node_type::QUIT: {
+            idx child = generate(parser.nodes.at(node.children[0]));
+            return emit_instruction(opcode::QUIT, child);
+        }
         case parser::node_type::NOT: {
             idx child = generate(parser.nodes.at(node.children[0]));
             return emit_instruction(opcode::NOT, child);
@@ -227,7 +256,7 @@ ir::idx ir::generate(parser::node& node) {
         default:
             frog::croak(parser.lex.src, frog::diagnostic {
                 frog::level::error,
-                frog::message::unimplemented,
+                frog::message::bug_unimplemented,
                 node.range
             });
             break;

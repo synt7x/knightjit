@@ -98,6 +98,7 @@ public:
 
     BLOCK,
 
+    ASCII,
     CALL,
     QUIT,
     OUTPUT,
