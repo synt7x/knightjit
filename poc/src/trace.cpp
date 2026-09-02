@@ -120,6 +120,8 @@ void generate_thunk(const uint8_t thunk[], size_t thunk_size, size_t jmp_offset,
     memcpy(&buffer[jmp_offset + 1], &rel32, sizeof(int32_t));
 }
 
+void jswap(uint8_t* target, uint8_t patch[], size_t size) {}
+
 void tracer(pool trace_pool, void(*program)()) {
     uint8_t* code = reinterpret_cast<uint8_t*>(program);
     uint8_t patch = 0;
@@ -143,6 +145,9 @@ void tracer(pool trace_pool, void(*program)()) {
             uint8_t stub1[256];
             generate_thunk(STUB1, sizeof(STUB1), 43, target_address, stub, stub1);
 
+            jswap(target_address, thunk, 100);
+            jswap(stub, stub1, 256);
+
             flush(code);
 
             patch = 1;
@@ -155,6 +160,9 @@ void tracer(pool trace_pool, void(*program)()) {
 
             uint8_t stub2[256];
             generate_thunk(STUB2, sizeof(STUB2), 6, target_address, stub, stub2);
+
+            jswap(target_address, thunk, 100);
+            jswap(stub, stub2, 256);
 
             flush(code);
 
