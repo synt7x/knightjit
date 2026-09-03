@@ -49,6 +49,11 @@ void inspect(ir::compact instr, std::size_t idx) {
     int32_t r3 = anchor + d3;
 
     switch (instr.op) {
+        case ir::opcode::QUIT:
+            std::cout << inspect(instr.op) 
+                      << " v" << anchor 
+                      << "\n";
+            break;
         case ir::opcode::ADD:
         case ir::opcode::SUB:
         case ir::opcode::MUL:

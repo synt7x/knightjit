@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <iostream>
 
 namespace vm {
 using bump_id = std::size_t;
@@ -15,7 +16,7 @@ public:
      * @note The capacity must not be 0. If the capacity
      * is set to 0, it will be treated as 1.
      */
-    bump(bump_id cap = 512) : capacity(cap) {
+    bump(bump_id cap = 4096) : capacity(cap) {
         if (capacity == 0) capacity = 1;
         grow();
     }
@@ -45,13 +46,16 @@ public:
      */
     [[nodiscard]]
     bump_id allocate(std::size_t size) {
-        if (blocks.back().size + size > capacity) grow();
+        size_t aligned = (size + 7) & ~7;
+        if (blocks.back().size + aligned > capacity) {
+            grow();
+        }
 
         auto& b = blocks.back();
-        b.size += size;
-
         bump_id idx = index;
-        index += size;
+
+        b.size += aligned;
+        index += aligned;
 
         return idx;
     }
@@ -134,9 +138,9 @@ public:
         blocks.emplace_back();
         auto& b = blocks.back();
 
-        
         b.nodes = static_cast<std::byte*>(operator new[](capacity));
-        b.size = 0;
+        uintptr_t addr = reinterpret_cast<uintptr_t>(b.nodes);
+        b.size = (-addr) & 7;
     }
 
     /// @brief The vector of blocks allocated in the arena

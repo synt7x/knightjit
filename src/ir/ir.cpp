@@ -15,7 +15,7 @@ ir::idx ir::emit_constant(int64_t num) {
 
 ir::idx ir::emit_constant(vm::string& str) {
     instruction instr {};
-    instr.constant = constant(true, reinterpret_cast<uintptr_t>(&str));
+    instr.constant = constant(true, reinterpret_cast<uintptr_t>(&str) >> 3);
     
     return emit(instr);
 }
@@ -136,7 +136,7 @@ ir::idx ir::patch(idx index, opcode op, idx v1, idx v2, idx v3) {
 
 ir::idx ir::emit_string(frog::span range) {
     std::string_view str = parser.fetch(range);
-    vm::bump_id id = strings.allocate(str.size() + 2);
+    vm::bump_id id = strings.allocate(str.size() + 8);
 
     vm::string& s = *reinterpret_cast<vm::string*>(strings.pointer_at(id));
     s.length = str.size();
