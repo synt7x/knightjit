@@ -94,45 +94,6 @@ ir::idx ir::emit_instruction(ir::opcode op, idx v1, idx v2, idx v3) {
     }
 }
 
-ir::idx ir::patch(idx index, opcode op, idx v1) {
-    int64_t anchor = static_cast<int64_t>(length()) - static_cast<int64_t>(v1);
-    bool fits = (anchor >= 0) && (anchor <= 0xFFFFFF);
-    instruction& instr = instructions[index];
-
-    if (instr.compact.flag == flags::EXTENDED) {
-        frog::croak(parser.lex.src, frog::diagnostic {
-            frog::level::panic,
-            frog::message::bug_extended,
-            frog::span { 0, 0 }
-        });
-    }
-
-    if (!fits) {
-        instr.extended = extended(op, v1);
-    } else {
-        instr.compact = compact(op);
-        instr.compact.anchor = static_cast<uint32_t>(anchor);
-    }
-}
-
-ir::idx ir::patch(idx index, opcode op, idx v1, idx v2, idx v3) {
-    instruction& instr = instructions[index];
-    int64_t anchor = static_cast<int64_t>(length()) - static_cast<int64_t>(v1);
-
-    int64_t d2 = static_cast<int64_t>(v2) - static_cast<int64_t>(v1);
-    int64_t d3 = static_cast<int64_t>(v3) - static_cast<int64_t>(v1);
-
-    bool fits =( (anchor >= 0) && (anchor <= 0xFFFFFF))
-        || ((d2 >= -32768) && (d2 <= 32767))
-        || ((d3 >= -32768) && (d3 <= 32767));
-
-    if (!fits) {
-        
-    } else {
-        
-    }
-}
-
 ir::idx ir::emit_string(frog::span range) {
     std::string_view str = parser.fetch(range);
     vm::bump_id id = strings.allocate(str.size() + 8);
