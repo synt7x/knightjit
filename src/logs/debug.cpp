@@ -32,6 +32,8 @@ const std::string_view inspect(ir::opcode op) {
         case ir::opcode::MOD: return "mod";
         case ir::opcode::POW: return "pow";
         case ir::opcode::COERCE: return "coerce";
+        case ir::opcode::RETURN: return "return";
+        case ir::opcode::BLOCK: return "block";
         default: return "unknown";
     }
 }
@@ -49,7 +51,15 @@ void inspect(ir::compact instr, std::size_t idx) {
     int32_t r3 = anchor + d3;
 
     switch (instr.op) {
+        case ir::opcode::BLOCK:
+            std::cout << inspect(instr.op) 
+                      << " ref "
+                      << anchor
+                      << "\n";
+            break;
         case ir::opcode::QUIT:
+        case ir::opcode::OUTPUT:
+        case ir::opcode::RETURN:
             std::cout << inspect(instr.op) 
                       << " v" << anchor 
                       << "\n";
