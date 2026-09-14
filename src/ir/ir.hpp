@@ -44,15 +44,62 @@ public:
    * 
    */
   struct block {
-    idx start;
-    idx length;
+    idx start = 0;
+    idx length = 0;
+    idx successor = 0;
 
-    std::vector<idx> extended;
+    std::vector<idx> extended = {};
   };
 
   std::vector<block> blocks = { 
-    { 0, 0, {} } // The root block, length is updated once it is finished.
+    block { 0, 0, 0, {} } // The root block, length is updated once it is finished.
   };
+
+  /// @brief Current SSA compilation unit.
+  idx unit_index = 0;
+
+  block& unit() {
+    return blocks[unit_index];
+  }
+
+  /**
+   * @brief Starts a new block
+   * 
+   * @return idx 
+   */
+  idx bnter() {
+    unit().length = instructions.size() - unit().start;
+
+    blocks.push_back(block {
+      /*.start = */ static_cast<idx>(instructions.size()),
+      /*.length = */ 0,
+      /*.successor = */ 0,
+      /*.extended = */ {},
+    });
+
+    unit_index = blocks.size() - 1;
+    return unit_index;
+  }
+
+  /**
+   * @brief Ends the current block
+   * 
+   * @return idx 
+   */
+  idx bxit() {
+    idx finished = unit_index;
+    unit().length = instructions.size() - unit().start;
+
+    blocks.push_back(block {
+      /*.start = */ static_cast<idx>(instructions.size()),
+      /*.length = */ 0,
+      /*.successor = */ 0,
+      /*.extended = */ {},
+    });
+
+    unit_index = blocks.size() - 1;
+    return finished;
+  }
 
   /**
    * @brief Generates the SSA instructions from the
@@ -65,7 +112,7 @@ public:
    * @brief Generates the SSA instructions from the
    * provided AST node.
    */
-  idx generate(parser::node& node);
+  idx generate(parser::node& node, bool tail = false);
 
   /**
    * @brief A pool of strings allocated for the IR,
@@ -88,6 +135,9 @@ public:
 
   /**
    * @brief Operation to be performed by a specific IR instruction.
+   * 
+   * @note Coercions are all explicit using the opcode::COERCE instruction,
+   * @note even when specified that the operation is coercive.
    */
   enum class opcode : idx {
     /// @brief Panics with an error corresponding to `vm::error::error_name`.
@@ -96,12 +146,38 @@ public:
     /// @brief Performs no operation. This instruction is *never* compiled in JIT mode.
     NOP,
 
+    /// @brief Points to the beginning of a block of instructions, which may be jumped to.
     BLOCK,
 
+    /**
+     * @brief Converts the first argument to and from ASCII.
+     * 
+     * @note Type specific behavior:
+     * @note - int: Converts the first argument to a string containing its ASCII character.
+     * @note - string: Converts the first argument to an int containing its ASCII value (of the first character).
+     * @note - array: Results in `vm::error::ascii_array`.
+     * @note - bool: Results in `vm::error::ascii_boolean`.
+     * @note - null: Results in `vm::error::ascii_null`.
+     */
     ASCII,
+
+    /// @brief Calls the first argument, panics if the first argument is not a block.
     CALL,
-    QUIT,
+
+    /**
+     * @brief Retrieves the length of the first argument.
+     * 
+     * @note Type specific behavior:
+     * @note - int: Returns the number of digits.
+     * @note - string: Returns the number of characters.
+     * @note - array: Returns the number of elements.
+     * @note - bool: Results in `vm::error::length_boolean`.
+     * @note - null: Returns 0.
+     */
+    LENGTH,
     OUTPUT,
+
+    QUIT,
     NOT,
     NEGATE,
 
@@ -130,14 +206,67 @@ public:
      */
     SUB,
 
+    /**
+     * @brief Multiplication operation, coerces the second argument to the first.
+     * 
+     * @note Type specific behavior:
+     * @note - int: Multiplies the first argument by the second.
+     * @note - string: Repeats the first argument by the second argument number of times.
+     * @note - array: Repeats the first argument by the second argument number of times.
+     * @note - bool: Results in `vm::error::multiply_boolean`.
+     * @note - null: Results in `vm::error::multiply_null`.
+     */
     MUL,
+
+    /**
+     * @brief Division operation, coerces the second argument to the first.
+     * 
+     * @note Type specific behavior:
+     * @note - int: Divides the first argument by the second.
+     * @note - string: Results in `vm::error::divide_string`.
+     * @note - array: Results in `vm::error::divide_array`.
+     * @note - bool: Results in `vm::error::divide_boolean`.
+     * @note - null: Results in `vm::error::divide_null`.
+     */
     DIV,
+
+    /**
+     * @brief Modulo operation, coerces the second argument to the first.
+     * 
+     * @note Type specific behavior:
+     * @note - int: Computes the remainder of the first argument divided by the second.
+     * @note - string: Results in `vm::error::modulo_string`.
+     * @note - array: Results in `vm::error::modulo_array`.
+     * @note - bool: Results in `vm::error::modulo_boolean`.
+     * @note - null: Results in `vm::error::modulo_null`.
+     */
     MOD,
+
+    /**
+     * @brief Exponentiation operation, coerces the second argument to the first.
+     * 
+     * @note Type specific behavior:
+     * @note - int: Raises the first argument to the power of the second.
+     * @note - string: Results in `vm::error::power_string`.
+     * @note - array: Joins elements in the first argument with the second argument as a separator.
+     * @note - bool: Results in `vm::error::power_boolean`.
+     * @note - null: Results in `vm::error::power_null`.
+     */
     POW,
 
+    /**
+     * @brief Coerces the first argument to the type of the second argument.
+     * 
+     */
     COERCE,
 
+    RETURN,
+
+    /// @brief Unconditional jump to the instruction at the specified index.
     JMP,
+    
+    JZ,
+    JNZ
   };
 
   enum class flags {
@@ -270,6 +399,7 @@ public:
   idx emit_string(frog::span range);
   idx emit_number(frog::span range);
   idx emit_block(idx block);
+  idx emit_return(idx value, bool tail);
 
   idx emit(instruction instr) {
     instructions.emplace_back(instr);

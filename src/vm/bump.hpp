@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <cstdint>
-#include <iostream>
 
 namespace vm {
 using bump_id = std::size_t;
