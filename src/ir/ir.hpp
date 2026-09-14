@@ -391,11 +391,6 @@ public:
   idx emit_instruction(opcode op, idx v1, idx v2);
   idx emit_instruction(opcode op, idx v1, idx v2, idx v3);
 
-  idx patch(idx index, opcode op);
-  idx patch(idx index, opcode op, idx v1);
-  idx patch(idx index, opcode op, idx v1, idx v2);
-  idx patch(idx index, opcode op, idx v1, idx v2, idx v3);
-
   idx emit_string(frog::span range);
   idx emit_number(frog::span range);
   idx emit_block(idx block);
