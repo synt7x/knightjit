@@ -182,7 +182,7 @@ ir::idx ir::generate_block(parser::node& node) {
     return bxit();
 }
 
-ir::idx ir::generate(parser::node& node, bool tail = false) {
+ir::idx ir::generate(parser::node& node, bool tail) {
     switch (node.type) {
         case parser::node_type::STRING:
             return emit_return(emit_string(node.range), tail);
