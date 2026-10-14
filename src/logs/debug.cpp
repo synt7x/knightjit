@@ -2,6 +2,8 @@
 #include "parser.hpp"
 #include "ir.hpp"
 
+#include "color.hpp"
+
 #include <cstdint>
 #include <string_view>
 #include <iostream>
@@ -52,15 +54,18 @@ void inspect(ir::compact instr, std::size_t idx) {
 
     switch (instr.op) {
         case ir::opcode::BLOCK:
-            std::cout << inspect(instr.op) 
+            std::cout << console::color_scoped(inspect(instr.op), console::shade::yellow)
                       << " ref "
                       << anchor
+                      << console::reset
                       << "\n";
             break;
         case ir::opcode::QUIT:
         case ir::opcode::OUTPUT:
         case ir::opcode::RETURN:
-            std::cout << inspect(instr.op) 
+        case ir::opcode::NOT:
+        case ir::opcode::NEGATE:
+            std::cout << console::color_scoped(inspect(instr.op), console::shade::yellow)
                       << " v" << anchor 
                       << "\n";
             break;
@@ -71,7 +76,7 @@ void inspect(ir::compact instr, std::size_t idx) {
         case ir::opcode::POW:
         case ir::opcode::MOD:
         case ir::opcode::COERCE:
-            std::cout << inspect(instr.op) 
+            std::cout << console::color_scoped(inspect(instr.op), console::shade::yellow)
                       << " v" << anchor 
                       << " v" << r2 
                       << "\n";
@@ -82,7 +87,10 @@ void inspect(ir::compact instr, std::size_t idx) {
 void inspect(ir* ir) {
     for (std::size_t i = 0; i < ir->instructions.size(); i++) {
         const ir::instruction& instr = ir->instructions[i];
-        std::cout << i << ": " << "v" << i << " = ";
+        std::cout << console::color(console::shade::grey)
+            << i << ": " << console::color(console::shade::purple)
+            << "v" << i << console::color(console::shade::grey)
+            << " = " << console::reset;
 
         if (instr.compact.flag == ir::flags::COMPACT) {
             inspect(instr.compact, i);
@@ -91,9 +99,9 @@ void inspect(ir* ir) {
         } else if (instr.constant.flag == static_cast<uint64_t>(ir::flags::CONSTANT)) {
             if (instr.constant.is_string) {
                 vm::string* str = instr.constant.unpack();
-                std::cout << "\"" << str->view() << "\"\n";
+                std::cout << console::color(console::shade::green) <<  "\"" << str->view() << "\"\n" << console::reset;
             } else {
-                std::cout << instr.constant.value << "\n";
+                std::cout << console::color(console::shade::blue) << instr.constant.value << "\n" << console::reset;
             }
         }
     }
